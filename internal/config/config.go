@@ -1,0 +1,42 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+type Config struct {
+	HTTP     HTTPConfig
+	Security SecurityConfig
+}
+type HTTPConfig struct {
+	Address                                string
+	ReadTimeout, WriteTimeout, IdleTimeout time.Duration
+}
+type SecurityConfig struct {
+	AdminAPIKey      string
+	MaxIdentifyBytes int64
+}
+
+func Load() (Config, error) {
+	c := Config{HTTP: HTTPConfig{Address: value("LYRA_HTTP_ADDRESS", ":8080"), ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}, Security: SecurityConfig{AdminAPIKey: os.Getenv("LYRA_ADMIN_API_KEY"), MaxIdentifyBytes: 10 << 20}}
+	if raw := os.Getenv("LYRA_MAX_IDENTIFY_BYTES"); raw != "" {
+		n, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			return c, fmt.Errorf("LYRA_MAX_IDENTIFY_BYTES: %w", err)
+		}
+		c.Security.MaxIdentifyBytes = n
+	}
+	if c.Security.MaxIdentifyBytes <= 0 {
+		return c, fmt.Errorf("LYRA_MAX_IDENTIFY_BYTES must be positive")
+	}
+	return c, nil
+}
+func value(k, fallback string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return fallback
+}

@@ -1,0 +1,5 @@
+.env
+lyra
+coverage.out
+tmp/
+data/
