@@ -10,8 +10,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 
 ## Progress
 
-- [in progress] Phase 0: repository context and deterministic DSP spike
-- [pending] Phase 1: foundation
+- [completed] Phase 0: repository context and deterministic DSP spike
+- [in progress] Phase 1: foundation
 - [pending] Phase 2: schema/catalog
 - [pending] Phase 3: production landmark-v1
 - [pending] Phase 4: ingestion
@@ -59,4 +59,4 @@ Each phase meets its bootstrap acceptance checks. v1 only completes after all re
 
 ## Outcomes & Retrospective
 
-Phase 0 is partially implemented and verified with `go test ./...`, `go vet ./...`, `go build ./cmd/lyra`, and a local readiness smoke test. It remains open pending a checked-in golden WAV fixture.
+Phase 0 completed with deterministic extraction, hash boundary/silence tests, and a committed synthetic golden vector (244 fingerprints; SHA-256 asserted). It was verified with `go test ./...`, `go vet ./...`, `go build ./cmd/lyra`, and a local readiness smoke test.

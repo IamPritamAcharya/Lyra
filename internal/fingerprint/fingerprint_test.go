@@ -1,7 +1,10 @@
 package fingerprint
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -47,6 +50,23 @@ func TestExtractDeterministic(t *testing.T) {
 	}
 	if !reflect.DeepEqual(a, b) {
 		t.Fatal("non-deterministic fingerprints")
+	}
+}
+
+func TestLandmarkV1GoldenVector(t *testing.T) {
+	fps, err := Extract(tone(3, 440, 880, 1330))
+	if err != nil {
+		t.Fatal(err)
+	}
+	buf := make([]byte, len(fps)*8)
+	for i, fp := range fps {
+		binary.LittleEndian.PutUint32(buf[i*8:], fp.Hash)
+		binary.LittleEndian.PutUint32(buf[i*8+4:], uint32(fp.AnchorFrame))
+	}
+	got := sha256.Sum256(buf)
+	const want = "8bb753c351bf6ecd7e81ba0b83e3d8bfc3a3c470ec935a9450ab05edeb98c2bf"
+	if fmt.Sprintf("%x", got) != want || len(fps) != 244 {
+		t.Fatalf("golden mismatch: sha256=%x count=%d", got, len(fps))
 	}
 }
 
