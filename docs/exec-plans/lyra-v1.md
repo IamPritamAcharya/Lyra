@@ -11,8 +11,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 ## Progress
 
 - [completed] Phase 0: repository context and deterministic DSP spike
-- [in progress] Phase 1: foundation
-- [pending] Phase 2: schema/catalog
+- [completed] Phase 1: foundation
+- [in progress] Phase 2: schema/catalog
 - [pending] Phase 3: production landmark-v1
 - [pending] Phase 4: ingestion
 - [pending] Phase 5: matcher

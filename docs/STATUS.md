@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 1 — production foundation (in progress).
+Current phase: Phase 2 — database and catalog (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -8,15 +8,17 @@ Completed:
 - Hash packing boundary tests, deterministic extraction test, and silence rejection test implemented.
 - A synthetic deterministic landmark-v1 golden vector (244 packed fingerprints, SHA-256 asserted in tests) is committed.
 - Minimal `serve` command, graceful shutdown, health endpoints, and metrics shell implemented.
+- Docker/Compose and baseline GitHub Actions workflow created.
+- PostgreSQL migration pair, sqlc query definitions, and explicit track lifecycle state machine created.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
 - The environment could not complete Gonum/toolchain downloads; the current phase-0 FFT is a tested local radix-2 implementation. Production Phase 3 must adopt Gonum Fourier once dependency resolution is available.
-- Database, object storage, queue, ingestion, matcher, identify API, evaluation corpus, Docker, and CI are not yet implemented.
+- PostgreSQL adapter generation/runtime integration, object storage, queue, ingestion, matcher, identify API, and evaluation corpus are not yet implemented.
 
 Next:
-- Add Docker/Compose, CI, and production observability wiring; then proceed to schema/catalog.
+- Add PostgreSQL repository and admin catalog endpoints, with migration integration testing.
 
 Last verification:
 - `go test ./...`
