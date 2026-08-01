@@ -38,5 +38,8 @@ infra-down:
 dev:
 	docker compose up --build
 
-db-migrate db-reset eval benchmark docker-build:
+db-migrate: build
+	./lyra migrate
+
+db-reset eval benchmark docker-build:
 	@echo "$@ is not available until its corresponding implementation phase is complete" >&2; exit 1

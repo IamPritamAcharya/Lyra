@@ -5,3 +5,5 @@ Lyra v1 is one Go modular-monolith binary. `serve`, `worker`, `migrate`, `ingest
 Dependencies point inward: API handlers call application use cases; catalog, ingest, and identify depend on small consumer-owned interfaces; audio and fingerprint packages are deterministic and infrastructure-free. PostgreSQL will initially implement the fingerprint inverted index behind `FingerprintIndex`.
 
 Track lifecycle is `CREATED -> UPLOADED -> INDEXING -> READY`, with `FAILED`, `REINDEXING`, and `DELETING -> DELETED` explicit state transitions. Index replacement is transactional: generate outside a transaction, then delete/version-insert/status-update in one transaction.
+
+A `CREATED` track may also transition to `DELETING` so an abandoned metadata record can be removed before reference audio exists.

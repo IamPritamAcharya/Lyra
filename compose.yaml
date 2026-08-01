@@ -18,6 +18,11 @@ services:
     ports: ["9000:9000", "9001:9001"]
   lyra:
     build: .
-    env_file: .env
+    environment:
+      LYRA_HTTP_ADDRESS: :8080
+      LYRA_ADMIN_API_KEY: change-me
+      DATABASE_URL: postgres://lyra:lyra@postgres:5432/lyra?sslmode=disable
+      REDIS_ADDR: valkey:6379
+      S3_ENDPOINT: minio:9000
     ports: ["8080:8080"]
     depends_on: [postgres, valkey, minio]

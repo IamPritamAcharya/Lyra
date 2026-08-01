@@ -49,7 +49,7 @@ type Repository interface {
 }
 
 func CanTransition(from, to Status) bool {
-	return map[Status]map[Status]bool{Created: {Uploaded: true}, Uploaded: {Indexing: true, Deleting: true}, Indexing: {Ready: true, Failed: true}, Ready: {Reindexing: true, Deleting: true}, Failed: {Indexing: true, Deleting: true}, Reindexing: {Ready: true, Failed: true}, Deleting: {Deleted: true}}[from][to]
+	return map[Status]map[Status]bool{Created: {Uploaded: true, Deleting: true}, Uploaded: {Indexing: true, Deleting: true}, Indexing: {Ready: true, Failed: true}, Ready: {Reindexing: true, Deleting: true}, Failed: {Indexing: true, Deleting: true}, Reindexing: {Ready: true, Failed: true}, Deleting: {Deleted: true}}[from][to]
 }
 func ValidateTransition(from, to Status) error {
 	if !CanTransition(from, to) {

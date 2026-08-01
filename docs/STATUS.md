@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 2 — database and catalog (in progress).
+Current phase: Phase 3 — production landmark-v1 (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -10,6 +10,10 @@ Completed:
 - Minimal `serve` command, graceful shutdown, health endpoints, and metrics shell implemented.
 - Docker/Compose and baseline GitHub Actions workflow created.
 - PostgreSQL migration pair, sqlc query definitions, and explicit track lifecycle state machine created.
+- pgx/PostgreSQL catalog repository added, including locked transactional lifecycle transitions.
+- Admin catalog create/list/get HTTP routes with timing-safe key comparison and contract skeleton added.
+- `lyra migrate` now applies golang-migrate migrations; it was executed against local Compose PostgreSQL and created all five expected tables.
+- Tagged PostgreSQL catalog lifecycle integration test passed against Compose PostgreSQL.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
@@ -18,10 +22,11 @@ Known issues:
 - PostgreSQL adapter generation/runtime integration, object storage, queue, ingestion, matcher, identify API, and evaluation corpus are not yet implemented.
 
 Next:
-- Add PostgreSQL repository and admin catalog endpoints, with migration integration testing.
+- Implement safe FFmpeg probing/normalization and production audio validation.
 
 Last verification:
 - `go test ./...`
 - `go vet ./...`
 - `go build ./cmd/lyra`
 - local `GET /health/ready` smoke test
+- `DATABASE_URL=... go test -tags=integration ./...` against local Compose PostgreSQL

@@ -12,8 +12,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 
 - [completed] Phase 0: repository context and deterministic DSP spike
 - [completed] Phase 1: foundation
-- [in progress] Phase 2: schema/catalog
-- [pending] Phase 3: production landmark-v1
+- [completed] Phase 2: schema/catalog
+- [in progress] Phase 3: production landmark-v1
 - [pending] Phase 4: ingestion
 - [pending] Phase 5: matcher
 - [pending] Phase 6: identification API
@@ -60,3 +60,7 @@ Each phase meets its bootstrap acceptance checks. v1 only completes after all re
 ## Outcomes & Retrospective
 
 Phase 0 completed with deterministic extraction, hash boundary/silence tests, and a committed synthetic golden vector (244 fingerprints; SHA-256 asserted). It was verified with `go test ./...`, `go vet ./...`, `go build ./cmd/lyra`, and a local readiness smoke test.
+
+Phase 2 has its initial migration/schema and a pgx catalog repository. The API integration and migration test remain open.
+
+Phase 2 completed: migrations ran successfully against Compose PostgreSQL and the tagged lifecycle integration test passed. Catalog admin create/list/get/delete endpoints are present. Delete is synchronous only until Phase 4 introduces the deletion worker.

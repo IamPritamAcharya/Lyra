@@ -9,8 +9,10 @@ import (
 
 type Config struct {
 	HTTP     HTTPConfig
+	Database DatabaseConfig
 	Security SecurityConfig
 }
+type DatabaseConfig struct{ URL string }
 type HTTPConfig struct {
 	Address                                string
 	ReadTimeout, WriteTimeout, IdleTimeout time.Duration
@@ -21,7 +23,7 @@ type SecurityConfig struct {
 }
 
 func Load() (Config, error) {
-	c := Config{HTTP: HTTPConfig{Address: value("LYRA_HTTP_ADDRESS", ":8080"), ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}, Security: SecurityConfig{AdminAPIKey: os.Getenv("LYRA_ADMIN_API_KEY"), MaxIdentifyBytes: 10 << 20}}
+	c := Config{HTTP: HTTPConfig{Address: value("LYRA_HTTP_ADDRESS", ":8080"), ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}, Database: DatabaseConfig{URL: os.Getenv("DATABASE_URL")}, Security: SecurityConfig{AdminAPIKey: os.Getenv("LYRA_ADMIN_API_KEY"), MaxIdentifyBytes: 10 << 20}}
 	if raw := os.Getenv("LYRA_MAX_IDENTIFY_BYTES"); raw != "" {
 		n, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {

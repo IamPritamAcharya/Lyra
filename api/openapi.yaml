@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info: {title: Lyra API, version: 0.1.0}
+paths:
+  /health/live:
+    get: {responses: {'200': {description: Process alive}}}
+  /health/ready:
+    get: {responses: {'200': {description: Ready}}}
+  /v1/admin/tracks:
+    post:
+      security: [{AdminKey: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateTrack'}}}}
+      responses: {'201': {description: Created}}
+    get: {security: [{AdminKey: []}], responses: {'200': {description: Tracks}}}
+  /v1/admin/tracks/{id}:
+    get: {security: [{AdminKey: []}], responses: {'200': {description: Track}, '404': {description: Not found}}}
+    delete: {security: [{AdminKey: []}], responses: {'204': {description: Deleted}}}
+components:
+  securitySchemes: {AdminKey: {type: apiKey, in: header, name: X-Lyra-Admin-Key}}
+  schemas:
+    CreateTrack:
+      type: object
+      required: [title, artist]
+      properties: {title: {type: string}, artist: {type: string}, album: {type: string, nullable: true}}

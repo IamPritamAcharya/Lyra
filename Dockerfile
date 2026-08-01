@@ -8,6 +8,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/lyra ./cmd/lyra
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates && rm -rf /var/lib/apt/lists/* && useradd --system --uid 10001 lyra
 COPY --from=build /out/lyra /usr/local/bin/lyra
+COPY db/migrations /app/db/migrations
+WORKDIR /app
 USER lyra
 EXPOSE 8080
 ENTRYPOINT ["lyra"]
