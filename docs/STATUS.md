@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 3 — production landmark-v1 (in progress).
+Current phase: Phase 5 — matcher (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -14,15 +14,15 @@ Completed:
 - Admin catalog create/list/get HTTP routes with timing-safe key comparison and contract skeleton added.
 - `lyra migrate` now applies golang-migrate migrations; it was executed against local Compose PostgreSQL and created all five expected tables.
 - Tagged PostgreSQL catalog lifecycle integration test passed against Compose PostgreSQL.
+- Phase 3 completed: safe FFmpeg/ffprobe boundary validates source audio and produces canonical mono 11025 Hz PCM16; DSP now uses Gonum Fourier.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- The environment could not complete Gonum/toolchain downloads; the current phase-0 FFT is a tested local radix-2 implementation. Production Phase 3 must adopt Gonum Fourier once dependency resolution is available.
-- PostgreSQL adapter generation/runtime integration, object storage, queue, ingestion, matcher, identify API, and evaluation corpus are not yet implemented.
+- Object storage, queue, asynchronous ingestion, matcher persistence, identification API, and evaluation corpus are not yet implemented.
 
 Next:
-- Implement safe FFmpeg probing/normalization and production audio validation.
+- Implement batched inverted-index lookup, temporal offset voting, ranking, and no-match handling.
 
 Last verification:
 - `go test ./...`

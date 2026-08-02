@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math"
 	"sort"
+
+	"gonum.org/v1/gonum/dsp/fourier"
 )
 
 const (
@@ -77,6 +79,7 @@ func Extract(samples []int16) ([]Fingerprint, error) {
 func stft(samples []int16) [][]float64 {
 	frames := 1 + (len(samples)-FFTSize)/HopSize
 	result := make([][]float64, frames)
+	transform := fourier.NewFFT(FFTSize)
 	input := make([]float64, FFTSize)
 	for frame := 0; frame < frames; frame++ {
 		base := frame * HopSize
@@ -85,7 +88,7 @@ func stft(samples []int16) [][]float64 {
 			window := 0.5 * (1 - math.Cos(2*math.Pi*float64(i)/float64(FFTSize-1)))
 			input[i] = float64(samples[base+i]) / 32768 * window
 		}
-		coeffs := fft(input)
+		coeffs := transform.Coefficients(nil, input)
 		bins := make([]float64, FFTSize/2)
 		for bin := range bins {
 			bins[bin] = math.Log1p(math.Hypot(real(coeffs[bin]), imag(coeffs[bin])))
@@ -93,41 +96,6 @@ func stft(samples []int16) [][]float64 {
 		result[frame] = bins
 	}
 	return result
-}
-
-// fft is a radix-2 Cooley-Tukey FFT. Keeping it local makes the phase-0
-// spike runnable with the repository's installed Go toolchain; phase 3 will
-// replace this tested implementation with Gonum Fourier once dependencies are
-// resolved in CI/deployment.
-func fft(input []float64) []complex128 {
-	n := len(input)
-	out := make([]complex128, n)
-	for i, v := range input {
-		out[i] = complex(v, 0)
-	}
-	for i, j := 1, 0; i < n; i++ {
-		bit := n >> 1
-		for ; j&bit != 0; bit >>= 1 {
-			j ^= bit
-		}
-		j ^= bit
-		if i < j {
-			out[i], out[j] = out[j], out[i]
-		}
-	}
-	for size := 2; size <= n; size <<= 1 {
-		angle := -2 * math.Pi / float64(size)
-		wlen := complex(math.Cos(angle), math.Sin(angle))
-		for start := 0; start < n; start += size {
-			w := complex(1, 0)
-			for j := 0; j < size/2; j++ {
-				u, v := out[start+j], out[start+j+size/2]*w
-				out[start+j], out[start+j+size/2] = u+v, u-v
-				w *= wlen
-			}
-		}
-	}
-	return out
 }
 
 func detectPeaks(spec [][]float64) []peak {
