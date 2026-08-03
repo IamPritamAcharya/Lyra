@@ -14,8 +14,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 - [completed] Phase 1: foundation
 - [completed] Phase 2: schema/catalog
 - [completed] Phase 3: production landmark-v1
-- [pending] Phase 4: ingestion
-- [in progress] Phase 5: matcher
+- [in progress] Phase 4: ingestion
+- [completed] Phase 5: matcher
 - [pending] Phase 6: identification API
 - [pending] Phase 7: evaluation
 - [pending] Phase 8: scalability hardening
@@ -65,4 +65,4 @@ Phase 2 has its initial migration/schema and a pgx catalog repository. The API i
 
 Phase 2 completed: migrations ran successfully against Compose PostgreSQL and the tagged lifecycle integration test passed. Catalog admin create/list/get/delete endpoints are present. Delete is synchronous only until Phase 4 introduces the deletion worker.
 
-Phase 3 completed with safe no-shell FFmpeg/ffprobe execution, input validation, canonical PCM conversion, and Gonum Fourier. Phase 4 ingestion is deferred until the matcher has a usable index contract; it remains required before release.
+Phase 3 completed with safe no-shell FFmpeg/ffprobe execution, input validation, canonical PCM conversion, and Gonum Fourier. Phase 5 completed with a consumer-owned index contract, one batched hash lookup, offset-neighbourhood voting, deterministic ranking, and conservative seed rejection floors. Phase 4 ingestion remains required before release.

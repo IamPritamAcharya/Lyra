@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 5 — matcher (in progress).
+Current phase: Phase 4 — ingestion (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -15,14 +15,15 @@ Completed:
 - `lyra migrate` now applies golang-migrate migrations; it was executed against local Compose PostgreSQL and created all five expected tables.
 - Tagged PostgreSQL catalog lifecycle integration test passed against Compose PostgreSQL.
 - Phase 3 completed: safe FFmpeg/ffprobe boundary validates source audio and produces canonical mono 11025 Hz PCM16; DSP now uses Gonum Fourier.
+- Deterministic matcher with one batched inverted-index lookup, ±2-frame offset voting, ranking, and no-match/insufficient-signal decisions implemented and unit-tested.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Object storage, queue, asynchronous ingestion, matcher persistence, identification API, and evaluation corpus are not yet implemented.
+- Object storage, queue, asynchronous ingestion, identification API, and evaluation corpus are not yet implemented.
 
 Next:
-- Implement batched inverted-index lookup, temporal offset voting, ranking, and no-match handling.
+- Implement reference ingestion and atomic fingerprint persistence (Phase 4), then wire CLI/HTTP identification.
 
 Last verification:
 - `go test ./...`
