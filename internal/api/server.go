@@ -13,7 +13,7 @@ import (
 	"github.com/lyra/lyra/internal/config"
 )
 
-func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error) http.Handler {
+func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health/live", jsonHandler(func(http.ResponseWriter, *http.Request) (any, error) { return map[string]string{"status": "live"}, nil }))
 	mux.HandleFunc("GET /health/ready", jsonHandler(func(_ http.ResponseWriter, r *http.Request) (any, error) {
@@ -26,6 +26,7 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 		_, _ = w.Write([]byte("# HELP lyra_http_requests_total Requests handled by Lyra\n# TYPE lyra_http_requests_total counter\nlyra_http_requests_total 0\n"))
 	})
+	mux.HandleFunc("POST /v1/identify", identifyHandler(cfg.Security.MaxIdentifyBytes, identifier))
 	admin := http.NewServeMux()
 	admin.HandleFunc("POST /v1/admin/tracks", createTrack(repo))
 	admin.HandleFunc("GET /v1/admin/tracks", listTracks(repo))

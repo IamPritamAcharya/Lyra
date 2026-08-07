@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 4 — ingestion (in progress).
+Current phase: Phase 6 — identification HTTP API (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -16,11 +16,12 @@ Completed:
 - Tagged PostgreSQL catalog lifecycle integration test passed against Compose PostgreSQL.
 - Phase 3 completed: safe FFmpeg/ffprobe boundary validates source audio and produces canonical mono 11025 Hz PCM16; DSP now uses Gonum Fourier.
 - Deterministic matcher with one batched inverted-index lookup, ±2-frame offset voting, ranking, and no-match/insufficient-signal decisions implemented and unit-tested.
+- Phase 4 worker execution mode and Phase 5 matcher are implemented; Phase 6 multipart identify handler is wired to the matcher.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Object storage, queue, asynchronous ingestion, identification API, and evaluation corpus are not yet implemented.
+- Evaluation corpus, response metadata resolution, API rate limiting, and end-to-end recognition evaluation are not yet implemented.
 
 Next:
 - Implement reference ingestion and atomic fingerprint persistence (Phase 4), then wire CLI/HTTP identification.

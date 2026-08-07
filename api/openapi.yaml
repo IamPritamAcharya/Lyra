@@ -1,6 +1,10 @@
 openapi: 3.0.3
 info: {title: Lyra API, version: 0.1.0}
 paths:
+  /v1/identify:
+    post:
+      requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [audio], properties: {audio: {type: string, format: binary}}}}}}
+      responses: {'200': {description: Match, no-match, or insufficient signal}}
   /health/live:
     get: {responses: {'200': {description: Process alive}}}
   /health/ready:

@@ -1,3 +1,4 @@
+
 # Lyra v1 ExecPlan
 
 ## Purpose
@@ -14,8 +15,9 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 - [completed] Phase 1: foundation
 - [completed] Phase 2: schema/catalog
 - [completed] Phase 3: production landmark-v1
-- [in progress] Phase 4: ingestion
+- [completed] Phase 4: ingestion
 - [completed] Phase 5: matcher
+- [in progress] Phase 6: identification API
 - [pending] Phase 6: identification API
 - [pending] Phase 7: evaluation
 - [pending] Phase 8: scalability hardening
