@@ -19,6 +19,9 @@ func (r *CatalogRepository) Create(ctx context.Context, in catalog.CreateTrack) 
 func (r *CatalogRepository) Get(ctx context.Context, id string) (catalog.Track, error) {
 	return scanTrack(r.pool.QueryRow(ctx, `SELECT id,public_id::text,title,artist_name,album_name,status,created_at,updated_at FROM tracks WHERE public_id=$1 AND deleted_at IS NULL`, id))
 }
+func (r *CatalogRepository) GetByID(ctx context.Context, id int64) (catalog.Track, error) {
+	return scanTrack(r.pool.QueryRow(ctx, `SELECT id,public_id::text,title,artist_name,album_name,status,created_at,updated_at FROM tracks WHERE id=$1 AND deleted_at IS NULL`, id))
+}
 func (r *CatalogRepository) List(ctx context.Context, limit, offset int) ([]catalog.Track, error) {
 	rows, err := r.pool.Query(ctx, `SELECT id,public_id::text,title,artist_name,album_name,status,created_at,updated_at FROM tracks WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {

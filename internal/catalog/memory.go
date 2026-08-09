@@ -37,6 +37,16 @@ func (r *MemoryRepository) Get(_ context.Context, id string) (Track, error) {
 	}
 	return t, nil
 }
+func (r *MemoryRepository) GetByID(_ context.Context, id int64) (Track, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, t := range r.tracks {
+		if t.ID == id && t.Status != Deleted {
+			return t, nil
+		}
+	}
+	return Track{}, ErrTrackNotFound
+}
 func (r *MemoryRepository) List(_ context.Context, limit, offset int) ([]Track, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -4,7 +4,7 @@ paths:
   /v1/identify:
     post:
       requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [audio], properties: {audio: {type: string, format: binary}}}}}}
-      responses: {'200': {description: Match, no-match, or insufficient signal}}
+      responses: {'200': {description: Match, no-match, or insufficient signal; headers: {X-Request-ID: {schema: {type: string}}}}}
   /health/live:
     get: {responses: {'200': {description: Process alive}}}
   /health/ready:

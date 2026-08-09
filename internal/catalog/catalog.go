@@ -44,6 +44,7 @@ type CreateTrack struct {
 type Repository interface {
 	Create(context.Context, CreateTrack) (Track, error)
 	Get(context.Context, string) (Track, error)
+	GetByID(context.Context, int64) (Track, error)
 	List(context.Context, int, int) ([]Track, error)
 	Transition(context.Context, string, Status, *string) (Track, error)
 }

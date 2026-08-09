@@ -21,7 +21,7 @@ Completed:
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Evaluation corpus, response metadata resolution, API rate limiting, and end-to-end recognition evaluation are not yet implemented.
+- Evaluation corpus, API rate limiting, metrics instrumentation, and end-to-end recognition evaluation are not yet implemented.
 
 Next:
 - Implement reference ingestion and atomic fingerprint persistence (Phase 4), then wire CLI/HTTP identification.

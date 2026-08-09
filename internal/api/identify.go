@@ -2,8 +2,11 @@ package api
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/lyra/lyra/internal/catalog"
 	"github.com/lyra/lyra/internal/fingerprint"
 	"github.com/lyra/lyra/internal/identify"
 	"net/http"
@@ -15,9 +18,11 @@ type FileIdentifier interface {
 	IdentifyFile(context.Context, string) (identify.Result, error)
 }
 
-func identifyHandler(maxBytes int64, identifier FileIdentifier) http.HandlerFunc {
+func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
+		requestID := newRequestID()
+		w.Header().Set("X-Request-ID", requestID)
 		if identifier == nil {
 			writeError(w, http.StatusServiceUnavailable, "not_ready")
 			return
@@ -47,9 +52,14 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier) http.HandlerFunc
 		}
 		tmp.Close()
 		result, err := identifier.IdentifyFile(r.Context(), name)
-		response := map[string]any{"matched": result.Matched, "match": nil, "processing_ms": time.Since(started).Milliseconds()}
+		response := map[string]any{"request_id": requestID, "matched": result.Matched, "match": nil, "processing_ms": time.Since(started).Milliseconds()}
 		if result.Matched {
-			response["match"] = map[string]any{"track_internal_id": result.Candidate.TrackID, "confidence": result.Candidate.AlignmentCoherence, "reference_offset_frames": result.Candidate.BestAlignmentOffset}
+			track, err := tracks.GetByID(r.Context(), result.Candidate.TrackID)
+			if err != nil {
+				writeError(w, http.StatusServiceUnavailable, "catalog_unavailable")
+				return
+			}
+			response["match"] = map[string]any{"track_id": track.PublicID, "title": track.Title, "artist": track.ArtistName, "album": track.AlbumName, "confidence": result.Candidate.AlignmentCoherence, "reference_offset_ms": result.Candidate.BestAlignmentOffset * fingerprint.HopSize * 1000 / fingerprint.SampleRate}
 		}
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
 			response["reason"] = "insufficient_audio_signal"
@@ -61,4 +71,11 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier) http.HandlerFunc
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}
+}
+func newRequestID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "unavailable"
+	}
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
