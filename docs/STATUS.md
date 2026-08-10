@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 6 — identification HTTP API (in progress).
+Current phase: Phase 7 — evaluation framework (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -17,11 +17,12 @@ Completed:
 - Phase 3 completed: safe FFmpeg/ffprobe boundary validates source audio and produces canonical mono 11025 Hz PCM16; DSP now uses Gonum Fourier.
 - Deterministic matcher with one batched inverted-index lookup, ±2-frame offset voting, ranking, and no-match/insufficient-signal decisions implemented and unit-tested.
 - Phase 4 worker execution mode and Phase 5 matcher are implemented; Phase 6 multipart identify handler is wired to the matcher.
+- Phase 6 completed with ephemeral multipart handling, public metadata responses, request IDs, request limits, and per-process identify rate limiting.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Evaluation corpus, API rate limiting, metrics instrumentation, and end-to-end recognition evaluation are not yet implemented.
+- Evaluation corpus, metrics instrumentation, and end-to-end recognition evaluation are not yet implemented.
 
 Next:
 - Implement reference ingestion and atomic fingerprint persistence (Phase 4), then wire CLI/HTTP identification.

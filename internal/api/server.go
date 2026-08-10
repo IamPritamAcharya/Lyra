@@ -26,7 +26,11 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 		_, _ = w.Write([]byte("# HELP lyra_http_requests_total Requests handled by Lyra\n# TYPE lyra_http_requests_total counter\nlyra_http_requests_total 0\n"))
 	})
-	mux.HandleFunc("POST /v1/identify", identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo))
+	limit := cfg.Security.IdentifyPerMinute
+	if limit <= 0 {
+		limit = 30
+	}
+	mux.Handle("POST /v1/identify", newLimiter(limit).middleware(identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo)))
 	admin := http.NewServeMux()
 	admin.HandleFunc("POST /v1/admin/tracks", createTrack(repo))
 	admin.HandleFunc("GET /v1/admin/tracks", listTracks(repo))
