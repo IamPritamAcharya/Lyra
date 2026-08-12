@@ -3,3 +3,4 @@ lyra
 coverage.out
 tmp/
 data/
+postman/*.local.json

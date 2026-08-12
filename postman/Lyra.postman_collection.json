@@ -1,0 +1,46 @@
+{
+  "info": {
+    "_postman_id": "b8754223-b15b-4136-a6ad-8adc28734ce6",
+    "name": "Lyra Local API",
+    "description": "End-to-end local testing collection: create a reference track, upload audio, wait for READY, then identify a query clip.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8080"},
+    {"key": "admin_api_key", "value": "change-me"},
+    {"key": "track_id", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {"name": "Live", "request": {"method": "GET", "url": "{{base_url}}/health/live"}},
+        {"name": "Ready", "request": {"method": "GET", "url": "{{base_url}}/health/ready"}},
+        {"name": "Metrics", "request": {"method": "GET", "url": "{{base_url}}/metrics"}}
+      ]
+    },
+    {
+      "name": "Admin tracks",
+      "item": [
+        {
+          "name": "Create track (stores track_id)",
+          "event": [{"listen": "test", "script": {"exec": ["const body = pm.response.json();", "pm.expect(pm.response.code).to.equal(201);", "pm.environment.set('track_id', body.PublicID);", "pm.collectionVariables.set('track_id', body.PublicID);"]}}],
+          "request": {"method": "POST", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"title\": \"Synthetic Test Tone\",\n  \"artist\": \"Lyra Test\",\n  \"album\": \"Local Test Corpus\"\n}"}, "url": "{{base_url}}/v1/admin/tracks"}},
+        {"name": "List tracks", "request": {"method": "GET", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks?limit=50&offset=0"}},
+        {"name": "Get track / polling status", "request": {"method": "GET", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}},
+        {
+          "name": "Upload reference audio (queues indexing)",
+          "request": {"method": "POST", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "body": {"mode": "formdata", "formdata": [{"key": "audio", "type": "file", "src": "{{reference_audio_path}}"}]}, "url": "{{base_url}}/v1/admin/tracks/{{track_id}}/audio"}
+        },
+        {"name": "Delete track", "request": {"method": "DELETE", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}}
+      ]
+    },
+    {
+      "name": "Identification",
+      "item": [
+        {"name": "Identify indexed query clip", "request": {"method": "POST", "body": {"mode": "formdata", "formdata": [{"key": "audio", "type": "file", "src": "{{query_audio_path}}"}]}, "url": "{{base_url}}/v1/identify"}},
+        {"name": "Identify unknown audio", "request": {"method": "POST", "body": {"mode": "formdata", "formdata": [{"key": "audio", "type": "file", "src": ""}]}, "url": "{{base_url}}/v1/identify"}}
+      ]
+    }
+  ]
+}
