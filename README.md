@@ -1,5 +1,69 @@
 # Lyra
 
-Lyra is a backend-only, deterministic acoustic-landmark music identification system. It is a Go modular monolith designed to identify short recordings of audio that has been indexed as reference material.
+Lyra is a backend-only Go service that identifies short recordings of audio previously indexed as reference material. It uses deterministic acoustic landmarks, an inverted PostgreSQL fingerprint index, and temporal-offset voting—no machine learning or frontend.
 
-Current implementation status and known limitations are in [docs/STATUS.md](docs/STATUS.md). Start locally with `cp .env.example .env` and `make dev`; run the DSP spike with `go run ./cmd/lyra fingerprint canonical.wav`.
+## Current capabilities
+
+- Admin track catalog and private reference-audio upload
+- Asynchronous fingerprint indexing with PostgreSQL, Valkey, and S3-compatible storage
+- Safe FFprobe/FFmpeg canonicalization and deterministic landmark-v1 extraction
+- Multipart `POST /v1/identify` matching, no-match and insufficient-signal handling
+- Health endpoints, migrations, worker mode, OpenAPI contract, and importable Postman collection
+
+See [docs/STATUS.md](docs/STATUS.md) for the precise implementation state and unmeasured limitations.
+
+## Run locally
+
+Prerequisites: Go 1.22+, Docker/Compose, and FFmpeg.
+
+```bash
+cp .env.example .env
+make infra-up
+
+set -a && source .env && set +a
+make db-migrate
+```
+
+In separate terminals, after exporting the same `.env` values:
+
+```bash
+go run ./cmd/lyra serve
+go run ./cmd/lyra worker
+```
+
+Verify readiness:
+
+```bash
+curl http://localhost:8080/health/ready
+```
+
+## Test end-to-end with Postman
+
+Import [postman/Lyra.postman_collection.json](postman/Lyra.postman_collection.json) and [postman/Lyra.local.postman_environment.json](postman/Lyra.local.postman_environment.json). Select **Lyra Local**, then run:
+
+1. `Health / Ready`
+2. `Admin tracks / Create track (stores track_id)`
+3. `Admin tracks / Upload reference audio (queues indexing)`
+4. `Admin tracks / Get track / polling status` until `Status` is `READY`
+5. `Identification / Identify indexed query clip`
+
+The collection setup and audio path variables are described in [postman/README.md](postman/README.md).
+
+## Commands
+
+```bash
+make build
+make test
+make test-race
+make vet
+make verify
+make infra-up
+make infra-down
+make db-migrate
+```
+
+The binary supports `serve`, `worker`, `migrate`, `fingerprint`, and `eval` modes.
+
+## License
+
+License selection is pending.
