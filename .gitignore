@@ -1,5 +1,5 @@
 .env
-lyra
+/lyra
 coverage.out
 tmp/
 data/
