@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/lyra/lyra/internal/catalog"
+	"github.com/lyra/lyra/internal/ingest"
 )
 
-type AudioMetadata struct {
-	ObjectKey, SHA256, MimeType, OriginalFilename string
-	SizeBytes                                     int64
-}
-
-func (r *CatalogRepository) RecordAudio(ctx context.Context, publicID string, m AudioMetadata) error {
+func (r *CatalogRepository) RecordAudio(ctx context.Context, publicID string, m ingest.AudioMetadata) error {
 	_, err := r.pool.Exec(ctx, `INSERT INTO track_audio(track_id,object_key,sha256,size_bytes,mime_type,original_filename) SELECT id,$2,$3,$4,$5,$6 FROM tracks WHERE public_id=$1 ON CONFLICT (track_id) DO UPDATE SET object_key=EXCLUDED.object_key,sha256=EXCLUDED.sha256,size_bytes=EXCLUDED.size_bytes,mime_type=EXCLUDED.mime_type,original_filename=EXCLUDED.original_filename`, publicID, m.ObjectKey, m.SHA256, m.SizeBytes, m.MimeType, m.OriginalFilename)
 	if err != nil {
 		return fmt.Errorf("record track audio: %w", err)

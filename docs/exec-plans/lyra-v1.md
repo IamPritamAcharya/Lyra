@@ -67,3 +67,5 @@ Phase 2 has its initial migration/schema and a pgx catalog repository. The API i
 Phase 2 completed: migrations ran successfully against Compose PostgreSQL and the tagged lifecycle integration test passed. Catalog admin create/list/get/delete endpoints are present. Delete is synchronous only until Phase 4 introduces the deletion worker.
 
 Phase 3 completed with safe no-shell FFmpeg/ffprobe execution, input validation, canonical PCM conversion, and Gonum Fourier. Phase 5 completed with a consumer-owned index contract, one batched hash lookup, offset-neighbourhood voting, deterministic ranking, and conservative seed rejection floors. Phase 4 ingestion remains required before release.
+
+Reference upload endpoint wiring is now present: create track, post multipart reference audio, persist private object and metadata, then enqueue the indexing worker. A full local run awaits MinIO/Valkey image availability in this environment.

@@ -18,6 +18,11 @@ paths:
   /v1/admin/tracks/{id}:
     get: {security: [{AdminKey: []}], responses: {'200': {description: Track}, '404': {description: Not found}}}
     delete: {security: [{AdminKey: []}], responses: {'204': {description: Deleted}}}
+  /v1/admin/tracks/{id}/audio:
+    post:
+      security: [{AdminKey: []}]
+      requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [audio], properties: {audio: {type: string, format: binary}}}}}}
+      responses: {'202': {description: Reference audio stored and indexing queued}}
 components:
   securitySchemes: {AdminKey: {type: apiKey, in: header, name: X-Lyra-Admin-Key}}
   schemas:

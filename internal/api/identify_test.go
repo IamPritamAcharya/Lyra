@@ -36,7 +36,7 @@ func TestIdentifyReturnsPublicMetadataAndRemovesTemporaryInput(t *testing.T) {
 	}
 	part.Write([]byte("temporary query audio"))
 	form.Close()
-	handler := New(config.Config{Security: config.SecurityConfig{MaxIdentifyBytes: 1024}}, slog.New(slog.NewTextHandler(io.Discard, nil)), repo, func(*http.Request) error { return nil }, stubIdentifier{result: identify.Result{Matched: true, Candidate: &identify.Candidate{TrackID: track.ID, AlignmentCoherence: .75, BestAlignmentOffset: 12}}})
+	handler := New(config.Config{Security: config.SecurityConfig{MaxIdentifyBytes: 1024}}, slog.New(slog.NewTextHandler(io.Discard, nil)), repo, func(*http.Request) error { return nil }, stubIdentifier{result: identify.Result{Matched: true, Candidate: &identify.Candidate{TrackID: track.ID, AlignmentCoherence: .75, BestAlignmentOffset: 12}}}, nil)
 	request := httptest.NewRequest(http.MethodPost, "/v1/identify", &body)
 	request.Header.Set("Content-Type", form.FormDataContentType())
 	response := httptest.NewRecorder()

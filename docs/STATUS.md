@@ -22,10 +22,10 @@ Completed:
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Evaluation corpus, metrics instrumentation, and end-to-end recognition evaluation are not yet implemented.
+- A local full-workflow smoke test is pending MinIO/Valkey image download completion; evaluation corpus and metrics instrumentation remain unimplemented.
 
 Next:
-- Implement reference ingestion and atomic fingerprint persistence (Phase 4), then wire CLI/HTTP identification.
+- Run full local workflow: create track, upload reference, worker READY, identify a clip; then implement evaluation corpus generation.
 
 Last verification:
 - `go test ./...`

@@ -24,6 +24,7 @@ func Serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	var repo catalog.Repository = catalog.NewMemoryRepository()
 	ready := func(*http.Request) error { return nil }
 	var identifier api.FileIdentifier
+	var uploader api.ReferenceUploader
 	if cfg.Database.URL != "" {
 		pool, err := pgxpool.New(ctx, cfg.Database.URL)
 		if err != nil {
@@ -32,9 +33,16 @@ func Serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		defer pool.Close()
 		repo = lyrapostgres.NewCatalog(pool)
 		identifier = identify.FileIdentifier{Audio: audio.NewProcessor(), Matcher: identify.New(lyrapostgres.NewCatalog(pool), identify.DefaultConfig())}
+		if objects, err := objectstore.NewS3(objectstore.Config{Endpoint: cfg.Storage.Endpoint, AccessKey: cfg.Storage.AccessKey, SecretKey: cfg.Storage.SecretKey, Bucket: cfg.Storage.Bucket, Secure: cfg.Storage.Secure}); err == nil {
+			if err := objects.EnsureBucket(ctx); err == nil {
+				client := queue.NewClient(cfg.Redis.Address)
+				defer client.Close()
+				uploader = ingest.Service{Catalog: repo, Objects: objects, Queue: client, Audio: lyrapostgres.NewCatalog(pool)}
+			}
+		}
 		ready = func(r *http.Request) error { return pool.Ping(r.Context()) }
 	}
-	s := &http.Server{Addr: cfg.HTTP.Address, Handler: api.New(cfg, log, repo, ready, identifier), ReadTimeout: cfg.HTTP.ReadTimeout, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
+	s := &http.Server{Addr: cfg.HTTP.Address, Handler: api.New(cfg, log, repo, ready, identifier, uploader), ReadTimeout: cfg.HTTP.ReadTimeout, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
 	go func() { <-ctx.Done(); s.Shutdown(context.Background()) }()
 	err := s.ListenAndServe()
 	if err == http.ErrServerClosed {

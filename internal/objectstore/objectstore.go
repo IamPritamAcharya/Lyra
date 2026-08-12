@@ -34,6 +34,16 @@ func NewS3(cfg Config) (*S3, error) {
 	}
 	return &S3{client: c, bucket: cfg.Bucket}, nil
 }
+func (s *S3) EnsureBucket(ctx context.Context) error {
+	exists, err := s.client.BucketExists(ctx, s.bucket)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	return s.client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{})
+}
 func (s *S3) Put(ctx context.Context, key string, body io.Reader, size int64, mime string) error {
 	_, err := s.client.PutObject(ctx, s.bucket, key, body, size, minio.PutObjectOptions{ContentType: mime})
 	return err

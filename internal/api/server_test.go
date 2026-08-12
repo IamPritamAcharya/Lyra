@@ -13,7 +13,7 @@ import (
 )
 
 func TestAdminCatalogAuthAndCreate(t *testing.T) {
-	h := New(config.Config{Security: config.SecurityConfig{AdminAPIKey: "secret"}}, slog.New(slog.NewTextHandler(io.Discard, nil)), catalog.NewMemoryRepository(), func(*http.Request) error { return nil }, nil)
+	h := New(config.Config{Security: config.SecurityConfig{AdminAPIKey: "secret"}}, slog.New(slog.NewTextHandler(io.Discard, nil)), catalog.NewMemoryRepository(), func(*http.Request) error { return nil }, nil, nil)
 	r := httptest.NewRequest(http.MethodPost, "/v1/admin/tracks", bytes.NewBufferString(`{"title":"A","artist":"B"}`))
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -30,7 +30,7 @@ func TestAdminCatalogAuthAndCreate(t *testing.T) {
 }
 
 func TestAdminDelete(t *testing.T) {
-	h := New(config.Config{Security: config.SecurityConfig{AdminAPIKey: "secret"}}, slog.New(slog.NewTextHandler(io.Discard, nil)), catalog.NewMemoryRepository(), func(*http.Request) error { return nil }, nil)
+	h := New(config.Config{Security: config.SecurityConfig{AdminAPIKey: "secret"}}, slog.New(slog.NewTextHandler(io.Discard, nil)), catalog.NewMemoryRepository(), func(*http.Request) error { return nil }, nil, nil)
 	create := httptest.NewRequest(http.MethodPost, "/v1/admin/tracks", bytes.NewBufferString(`{"title":"A","artist":"B"}`))
 	create.Header.Set("X-Lyra-Admin-Key", "secret")
 	w := httptest.NewRecorder()

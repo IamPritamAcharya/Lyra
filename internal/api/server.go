@@ -13,7 +13,7 @@ import (
 	"github.com/lyra/lyra/internal/config"
 )
 
-func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier) http.Handler {
+func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier, uploader ReferenceUploader) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health/live", jsonHandler(func(http.ResponseWriter, *http.Request) (any, error) { return map[string]string{"status": "live"}, nil }))
 	mux.HandleFunc("GET /health/ready", jsonHandler(func(_ http.ResponseWriter, r *http.Request) (any, error) {
@@ -36,6 +36,7 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	admin.HandleFunc("GET /v1/admin/tracks", listTracks(repo))
 	admin.HandleFunc("GET /v1/admin/tracks/{id}", getTrack(repo))
 	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo))
+	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes))
 	mux.Handle("/v1/admin/", requireAdmin(cfg.Security.AdminAPIKey, admin))
 	return requestLog(log, mux)
 }
