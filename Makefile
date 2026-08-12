@@ -41,5 +41,8 @@ dev:
 db-migrate: build
 	./lyra migrate
 
-db-reset eval benchmark docker-build:
+eval: build
+	./lyra eval --manifest ./testdata/manifests/eval.json
+
+db-reset benchmark docker-build:
 	@echo "$@ is not available until its corresponding implementation phase is complete" >&2; exit 1
