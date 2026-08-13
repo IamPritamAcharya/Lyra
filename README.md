@@ -113,9 +113,12 @@ make verify         # Formatting, vet, tests
 make db-migrate     # Apply database migrations
 make benchmark      # Synthetic matcher benchmark
 make infra-down     # Stop local containers (data is preserved)
+make db-reset CONFIRM=RESET_LYRA_DB  # Destructively reset local PostgreSQL, then migrate
 ```
 
 The application binary supports `serve`, `worker`, `migrate`, `fingerprint`, `eval`, and `benchmark`. Use Make targets for local build artifacts; a bare `go build ./cmd/lyra` creates an unwanted root binary.
+
+`make db-reset CONFIRM=RESET_LYRA_DB` permanently removes local PostgreSQL tracks, fingerprints, and admin sessions before rerunning migrations. It deliberately does not delete MinIO objects; those former reference-audio objects are orphaned and can be removed separately only when intended.
 
 ## Test the workflow
 

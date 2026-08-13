@@ -30,6 +30,7 @@ Completed:
 - `make dev` now gracefully stops API, worker, frontend, and Docker infrastructure on `Ctrl-C`; named database/object-storage volumes preserve data.
 - MIT licensing and contributor guidelines are published.
 - Local Compose includes Adminer at `http://localhost:8081` for PostgreSQL inspection; it is development-only and excluded from deployment.
+- `make db-reset CONFIRM=RESET_LYRA_DB` safely gates a destructive local PostgreSQL schema reset and reapplies migrations; it intentionally does not delete MinIO objects.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.

@@ -32,6 +32,16 @@ Database: lyra
 
 Adminer is for inspecting local PostgreSQL tables and running development SQL. It is not part of Lyra’s application image or production deployment. Do not expose it publicly.
 
+## Resetting local PostgreSQL
+
+To deliberately wipe Lyra’s local PostgreSQL schema and reapply migrations:
+
+```bash
+make db-reset CONFIRM=RESET_LYRA_DB
+```
+
+The confirmation token is mandatory because this deletes all local catalog records, fingerprints, fingerprint statistics, and admin sessions. It does **not** delete private MinIO objects: the command resets the database only. Those objects become orphaned and should be removed only through a separately reviewed storage-cleanup operation.
+
 ## Logging
 
 `LYRA_LOG_FORMAT=text` emits colorized terminal logs for local development. `LYRA_LOG_FORMAT=json` emits structured JSON for production collectors. Set `LYRA_LOG_LEVEL` to `debug`, `info`, `warn`, or `error`; production should normally use `info` or `warn` with JSON.

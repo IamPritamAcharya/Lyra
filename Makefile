@@ -105,4 +105,16 @@ docker-build:
 	docker build -t lyra:local .
 
 db-reset:
-	@echo "$@ is not available until its corresponding implementation phase is complete" >&2; exit 1
+	@if [ "$(CONFIRM)" != "RESET_LYRA_DB" ]; then \
+		echo "Refusing to reset PostgreSQL without explicit confirmation." >&2; \
+		echo "This permanently deletes all local Lyra catalog data, fingerprints, and admin sessions." >&2; \
+		echo "Run: make db-reset CONFIRM=RESET_LYRA_DB" >&2; \
+		exit 2; \
+	fi
+	@docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U lyra -d lyra -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+	@set -euo pipefail; \
+	set -a; source ./.env; set +a; \
+	mkdir -p $(BIN_DIR); \
+	go build -o $(BINARY) ./cmd/lyra; \
+	$(BINARY) migrate
+	@echo "Lyra PostgreSQL database reset and migrations reapplied. MinIO reference objects were not deleted."
