@@ -41,8 +41,14 @@ function Login({ setCSRF }: { setCSRF: (value: string) => void }) {
     <label>Username<input value={username} autoComplete="username" onChange={(event) => setUsername(event.target.value)} required /></label>
     <label>Password<input type="password" value={password} autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required /></label>
     <button disabled={mutation.isPending} type="submit">{mutation.isPending ? "Signing in…" : "Sign in"}</button>
-    {mutation.isError && <p className="error">Invalid username or password.</p>}
+    {mutation.isError && <p className="error">{loginErrorMessage(mutation.error)}</p>}
   </form>;
+}
+
+function loginErrorMessage(error: Error) {
+  if (error.message === "invalid_credentials") return "Invalid username or password.";
+  if (error.message === "rate_limited") return "Too many sign-in attempts. Wait one minute, then try again.";
+  return "Sign-in is temporarily unavailable. Confirm that the API has started and migrations completed.";
 }
 
 function Catalog({ csrf, logout: signOut }: { csrf: string; logout: () => void }) {
