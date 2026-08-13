@@ -43,7 +43,7 @@ func (r *CatalogRepository) Transition(ctx context.Context, id string, to catalo
 	if err != nil {
 		return catalog.Track{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 	cur, err := scanTrack(tx.QueryRow(ctx, `SELECT id,public_id::text,title,artist_name,album_name,status,created_at,updated_at FROM tracks WHERE public_id=$1 FOR UPDATE`, id))
 	if err != nil {
 		return catalog.Track{}, err

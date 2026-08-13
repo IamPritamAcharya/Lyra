@@ -18,7 +18,7 @@ func (r *CatalogRepository) StoreTrack(ctx context.Context, publicID string, ver
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 	var id int64
 	var status catalog.Status
 	if err := tx.QueryRow(ctx, `SELECT id,status FROM tracks WHERE public_id=$1 FOR UPDATE`, publicID).Scan(&id, &status); err != nil {

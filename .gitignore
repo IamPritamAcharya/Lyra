@@ -1,6 +1,7 @@
 .env
 /lyra
 coverage.out
+.cache/
 tmp/
 data/
 postman/*.local.json

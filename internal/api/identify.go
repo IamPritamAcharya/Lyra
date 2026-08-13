@@ -77,7 +77,9 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			return
+		}
 	}
 }
 func newRequestID() string {

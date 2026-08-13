@@ -39,7 +39,7 @@ func Serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	uploader := ingest.Service{Catalog: repo, Objects: objects, Queue: client, Audio: repo}
 	ready := func(r *http.Request) error { return pool.Ping(r.Context()) }
 	s := &http.Server{Addr: cfg.HTTP.Address, Handler: api.New(cfg, log, repo, ready, identifier, uploader), ReadTimeout: cfg.HTTP.ReadTimeout, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
-	go func() { <-ctx.Done(); s.Shutdown(context.Background()) }()
+	go func() { <-ctx.Done(); _ = s.Shutdown(context.Background()) }()
 	err = s.ListenAndServe()
 	if err == http.ErrServerClosed {
 		return nil

@@ -24,11 +24,12 @@ Completed:
 - Serving now fails fast when PostgreSQL, object storage, or required security configuration is absent instead of exposing an in-memory fallback.
 - Panic recovery, restrictive security headers, and PostgreSQL backup/restore guidance are implemented.
 - Render web/worker blueprint, deployment environment documentation, and functional `make docker-build` target are implemented.
+- Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
+- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck` is blocked here because it cannot fetch the vulnerability database. A legal evaluation corpus remains unimplemented.
 
 Next:
 - Run `make docker-build` and full local smoke test where Docker access is available; add tracing/dependency failure tests and a legal evaluation corpus.
@@ -40,3 +41,4 @@ Last verification:
 - local `GET /health/ready` smoke test
 - `DATABASE_URL=... go test -tags=integration ./...` against local Compose PostgreSQL
 - `./lyra benchmark --synthetic-tracks=1000` → 2 ms, 200 query fingerprints, 4,200 in-memory synthetic postings; matched=true.
+- `go test -race ./...`, `go vet ./...`, and `golangci-lint run` passed on 2026-08-13.

@@ -1,5 +1,9 @@
 .DEFAULT_GOAL := build
 
+CACHE_DIR ?= $(CURDIR)/.cache
+export GOCACHE := $(CACHE_DIR)/go-build
+export GOLANGCI_LINT_CACHE := $(CACHE_DIR)/golangci-lint
+
 build:
 	go build ./cmd/lyra
 
