@@ -2,10 +2,6 @@
   <img src="web/public/brand/lyra-lockup.svg" width="300" alt="Lyra" />
 </p>
 
-<p align="center">
-  <img src="web/public/brand/lyra-banner.svg" width="100%" alt="Lyra — Find the music in the noise" />
-</p>
-
 <p align="center"><strong>Find the music in the noise.</strong></p>
 
 <p align="center">
@@ -25,6 +21,10 @@
 Lyra identifies an indexed reference track from a short, real-world recording. It is designed for exact-recording recognition: uploaded snippets, microphone captures, compressed files, and audio extracted from video—not humming, semantic search, or “similar songs.”
 
 The matching path is deterministic and inspectable: FFmpeg canonicalization → spectral landmarks → compact hashes → PostgreSQL inverted-index lookup → temporal-offset voting.
+
+<p align="center">
+  <img src="web/public/brand/lyra-banner.svg" width="100%" alt="Lyra — Find the music in the noise" />
+</p>
 
 ## What is included
 
