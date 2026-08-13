@@ -20,7 +20,10 @@ services:
     build: .
     environment:
       LYRA_HTTP_ADDRESS: :8080
-      LYRA_ADMIN_API_KEY: change-me
+      LYRA_ADMIN_USERNAME: admin
+      # Development only. Change this password/hash before exposing the service.
+      LYRA_ADMIN_PASSWORD_HASH: $$2y$$12$$D4ID04V5qqA/Em.wFpz09OEczShs.BUMm.QTcbPKkjAFwSdmuoKLC
+      LYRA_ADMIN_COOKIE_SECURE: "false"
       DATABASE_URL: postgres://lyra:lyra@postgres:5432/lyra?sslmode=disable
       REDIS_ADDR: valkey:6379
       S3_ENDPOINT: minio:9000

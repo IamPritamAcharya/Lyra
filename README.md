@@ -1,6 +1,6 @@
 # Lyra
 
-Lyra is a backend-only Go service that identifies short recordings of audio previously indexed as reference material. It uses deterministic acoustic landmarks, an inverted PostgreSQL fingerprint index, and temporal-offset voting—no machine learning or frontend.
+Lyra is a Go service that identifies short recordings of audio previously indexed as reference material. It uses deterministic acoustic landmarks, an inverted PostgreSQL fingerprint index, and temporal-offset voting—no machine learning.
 
 ## Current capabilities
 
@@ -8,6 +8,7 @@ Lyra is a backend-only Go service that identifies short recordings of audio prev
 - Asynchronous fingerprint indexing with PostgreSQL, Valkey, and S3-compatible storage
 - Safe FFprobe/FFmpeg canonicalization and deterministic landmark-v1 extraction
 - Multipart `POST /v1/identify` matching, no-match and insufficient-signal handling
+- Admin UI with a single bcrypt-protected, server-side session account
 - Health endpoints, migrations, worker mode, OpenAPI contract, and importable Postman collection
 
 See [docs/STATUS.md](docs/STATUS.md) for the precise implementation state and unmeasured limitations.
@@ -47,7 +48,7 @@ Import [postman/Lyra.postman_collection.json](postman/Lyra.postman_collection.js
 4. `Admin tracks / Get track / polling status` until `Status` is `READY`
 5. `Identification / Identify indexed query clip`
 
-The collection setup and audio path variables are described in [postman/README.md](postman/README.md).
+Run `Admin auth / Login` first; it stores the CSRF token, while Postman retains the HttpOnly session cookie. The collection setup and audio path variables are described in [postman/README.md](postman/README.md).
 
 ## Commands
 
@@ -70,7 +71,7 @@ Use the same image for the API (`lyra serve`) and worker (`lyra worker`). The re
 
 ## Frontend
 
-The public identification UI is a separate static React/Vite app under [`web/`](web/). Run `cd web && npm install && npm run dev`; see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#frontend). It intentionally does not expose admin features or the admin API key.
+The static React/Vite UI under [`web/`](web/) includes public identification and the single admin catalog workflow. Run `cd web && npm install && npm run dev`; see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#frontend).
 
 ## License
 

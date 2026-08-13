@@ -9,23 +9,41 @@ paths:
     get: {responses: {'200': {description: Process alive}}}
   /health/ready:
     get: {responses: {'200': {description: Ready}}}
+  /v1/admin/auth/login:
+    post:
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Login'}}}}
+      responses: {'200': {description: Session established; the HttpOnly cookie is set and the body includes a CSRF token}, '401': {description: Invalid credentials}, '429': {description: Rate limited}}
+  /v1/admin/auth/logout:
+    post:
+      security: [{AdminSession: []}]
+      responses: {'204': {description: Session removed}}
+  /v1/admin/auth/session:
+    get:
+      security: [{AdminSession: []}]
+      responses: {'200': {description: Valid session}, '401': {description: No valid session}}
   /v1/admin/tracks:
     post:
-      security: [{AdminKey: []}]
+      security: [{AdminSession: [], CSRFToken: []}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateTrack'}}}}
-      responses: {'201': {description: Created}}
-    get: {security: [{AdminKey: []}], responses: {'200': {description: Tracks}}}
+      responses: {'201': {description: Created}, '401': {description: No valid session}, '403': {description: CSRF check failed}}
+    get: {security: [{AdminSession: []}], responses: {'200': {description: Tracks}}}
   /v1/admin/tracks/{id}:
-    get: {security: [{AdminKey: []}], responses: {'200': {description: Track}, '404': {description: Not found}}}
-    delete: {security: [{AdminKey: []}], responses: {'204': {description: Deleted}}}
+    get: {security: [{AdminSession: []}], responses: {'200': {description: Track}, '404': {description: Not found}}}
+    delete: {security: [{AdminSession: [], CSRFToken: []}], responses: {'204': {description: Deleted}}}
   /v1/admin/tracks/{id}/audio:
     post:
-      security: [{AdminKey: []}]
+      security: [{AdminSession: [], CSRFToken: []}]
       requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [audio], properties: {audio: {type: string, format: binary}}}}}}
       responses: {'202': {description: Reference audio stored and indexing queued}}
 components:
-  securitySchemes: {AdminKey: {type: apiKey, in: header, name: X-Lyra-Admin-Key}}
+  securitySchemes:
+    AdminSession: {type: apiKey, in: cookie, name: lyra_admin_session}
+    CSRFToken: {type: apiKey, in: header, name: X-CSRF-Token}
   schemas:
+    Login:
+      type: object
+      required: [username, password]
+      properties: {username: {type: string}, password: {type: string, format: password}}
     CreateTrack:
       type: object
       required: [title, artist]

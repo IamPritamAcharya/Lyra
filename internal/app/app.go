@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lyra/lyra/internal/api"
 	"github.com/lyra/lyra/internal/audio"
+	"github.com/lyra/lyra/internal/auth"
 	"github.com/lyra/lyra/internal/config"
 	"github.com/lyra/lyra/internal/identify"
 	"github.com/lyra/lyra/internal/ingest"
@@ -38,7 +39,8 @@ func Serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	defer client.Close()
 	uploader := ingest.Service{Catalog: repo, Objects: objects, Queue: client, Audio: repo}
 	ready := func(r *http.Request) error { return pool.Ping(r.Context()) }
-	s := &http.Server{Addr: cfg.HTTP.Address, Handler: api.New(cfg, log, repo, ready, identifier, uploader), ReadTimeout: cfg.HTTP.ReadTimeout, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
+	adminAuth := auth.New(cfg.Security.AdminUsername, cfg.Security.AdminPasswordHash, lyrapostgres.NewSessionStore(pool))
+	s := &http.Server{Addr: cfg.HTTP.Address, Handler: api.New(cfg, log, repo, ready, identifier, uploader, adminAuth), ReadTimeout: cfg.HTTP.ReadTimeout, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
 	go func() { <-ctx.Done(); _ = s.Shutdown(context.Background()) }()
 	err = s.ListenAndServe()
 	if err == http.ErrServerClosed {

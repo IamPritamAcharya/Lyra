@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -14,7 +13,7 @@ import (
 	"github.com/lyra/lyra/internal/observability"
 )
 
-func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier, uploader ReferenceUploader) http.Handler {
+func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier, uploader ReferenceUploader, auth AdminAuth) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health/live", jsonHandler(func(http.ResponseWriter, *http.Request) (any, error) { return map[string]string{"status": "live"}, nil }))
 	mux.HandleFunc("GET /health/ready", jsonHandler(func(_ http.ResponseWriter, r *http.Request) (any, error) {
@@ -36,7 +35,16 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	admin.HandleFunc("GET /v1/admin/tracks/{id}", getTrack(repo))
 	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo))
 	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes))
-	mux.Handle("/v1/admin/", requireAdmin(cfg.Security.AdminAPIKey, admin))
+	if auth != nil {
+		mux.Handle("POST /v1/admin/auth/login", newLimiter(5).middleware(login(auth, cfg.Security.AdminCookieSecure)))
+		mux.HandleFunc("POST /v1/admin/auth/logout", logout(auth, cfg.Security.AdminCookieSecure))
+		mux.HandleFunc("GET /v1/admin/auth/session", sessionStatus(auth))
+		mux.Handle("/v1/admin/", requireSession(auth, admin))
+	} else {
+		mux.Handle("/v1/admin/", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, http.StatusServiceUnavailable, "admin_auth_unavailable")
+		}))
+	}
 	return recoverPanic(log, secureHeaders(cors(cfg.HTTP.AllowedOrigin, requestLog(log, metrics, mux))))
 }
 
@@ -91,16 +99,6 @@ func deleteTrack(repo catalog.Repository) http.HandlerFunc {
 		}
 		writeResult(w, track, err, http.StatusNoContent)
 	}
-}
-func requireAdmin(key string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got := r.Header.Get("X-Lyra-Admin-Key")
-		if key == "" || subtle.ConstantTimeCompare([]byte(got), []byte(key)) != 1 {
-			writeError(w, http.StatusUnauthorized, "unauthorized")
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 func jsonHandler(fn func(http.ResponseWriter, *http.Request) (any, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) { v, e := fn(w, r); writeResult(w, v, e, http.StatusOK) }

@@ -19,8 +19,14 @@ services:
         sync: false
       - key: S3_SECURE
         value: "true"
-      - key: LYRA_ADMIN_API_KEY
-        generateValue: true
+      - key: LYRA_ADMIN_USERNAME
+        value: admin
+      - key: LYRA_ADMIN_PASSWORD_HASH
+        sync: false
+      - key: LYRA_ADMIN_COOKIE_SECURE
+        value: "true"
+      - key: LYRA_ALLOWED_ORIGIN
+        sync: false
   - type: worker
     name: lyra-worker
     runtime: docker

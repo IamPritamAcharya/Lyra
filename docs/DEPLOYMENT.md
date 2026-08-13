@@ -24,7 +24,10 @@ lyra migrate
 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` | Object storage credentials |
 | `S3_BUCKET` | Reference-audio bucket |
 | `S3_SECURE` | `true` for HTTPS object storage |
-| `LYRA_ADMIN_API_KEY` | Secret used by admin endpoints |
+| `LYRA_ADMIN_USERNAME` | Single configured browser-admin username |
+| `LYRA_ADMIN_PASSWORD_HASH` | bcrypt hash for that admin password; never use the plain-text password here |
+| `LYRA_ADMIN_COOKIE_SECURE` | Must be `true` for an HTTPS deployment |
+| `LYRA_ALLOWED_ORIGIN` | Exact deployed frontend origin allowed to make browser API requests |
 
 Use a private S3/R2/MinIO bucket. Query recordings are never object-stored; only uploaded reference audio is retained.
 

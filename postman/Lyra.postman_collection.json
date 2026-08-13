@@ -7,7 +7,9 @@
   },
   "variable": [
     {"key": "base_url", "value": "http://localhost:8080"},
-    {"key": "admin_api_key", "value": "change-me"},
+    {"key": "admin_username", "value": "admin"},
+    {"key": "admin_password", "value": ""},
+    {"key": "csrf_token", "value": ""},
     {"key": "track_id", "value": ""}
   ],
   "item": [
@@ -20,19 +22,31 @@
       ]
     },
     {
+      "name": "Admin auth",
+      "item": [
+        {
+          "name": "Login (stores CSRF token)",
+          "event": [{"listen": "test", "script": {"exec": ["const body = pm.response.json();", "pm.expect(pm.response.code).to.equal(200);", "pm.collectionVariables.set('csrf_token', body.csrf_token);", "pm.environment.set('csrf_token', body.csrf_token);"]}}],
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"}, "url": "{{base_url}}/v1/admin/auth/login"}
+        },
+        {"name": "Session status", "request": {"method": "GET", "url": "{{base_url}}/v1/admin/auth/session"}},
+        {"name": "Logout", "request": {"method": "POST", "url": "{{base_url}}/v1/admin/auth/logout"}}
+      ]
+    },
+    {
       "name": "Admin tracks",
       "item": [
         {
           "name": "Create track (stores track_id)",
           "event": [{"listen": "test", "script": {"exec": ["const body = pm.response.json();", "pm.expect(pm.response.code).to.equal(201);", "pm.environment.set('track_id', body.PublicID);", "pm.collectionVariables.set('track_id', body.PublicID);"]}}],
-          "request": {"method": "POST", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"title\": \"Synthetic Test Tone\",\n  \"artist\": \"Lyra Test\",\n  \"album\": \"Local Test Corpus\"\n}"}, "url": "{{base_url}}/v1/admin/tracks"}},
-        {"name": "List tracks", "request": {"method": "GET", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks?limit=50&offset=0"}},
-        {"name": "Get track / polling status", "request": {"method": "GET", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}},
+          "request": {"method": "POST", "header": [{"key": "X-CSRF-Token", "value": "{{csrf_token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"title\": \"Synthetic Test Tone\",\n  \"artist\": \"Lyra Test\",\n  \"album\": \"Local Test Corpus\"\n}"}, "url": "{{base_url}}/v1/admin/tracks"}},
+        {"name": "List tracks", "request": {"method": "GET", "url": "{{base_url}}/v1/admin/tracks?limit=50&offset=0"}},
+        {"name": "Get track / polling status", "request": {"method": "GET", "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}},
         {
           "name": "Upload reference audio (queues indexing)",
-          "request": {"method": "POST", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "body": {"mode": "formdata", "formdata": [{"key": "audio", "type": "file", "src": "{{reference_audio_path}}"}]}, "url": "{{base_url}}/v1/admin/tracks/{{track_id}}/audio"}
+          "request": {"method": "POST", "header": [{"key": "X-CSRF-Token", "value": "{{csrf_token}}"}], "body": {"mode": "formdata", "formdata": [{"key": "audio", "type": "file", "src": "{{reference_audio_path}}"}]}, "url": "{{base_url}}/v1/admin/tracks/{{track_id}}/audio"}
         },
-        {"name": "Delete track", "request": {"method": "DELETE", "header": [{"key": "X-Lyra-Admin-Key", "value": "{{admin_api_key}}"}], "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}}
+        {"name": "Delete track", "request": {"method": "DELETE", "header": [{"key": "X-CSRF-Token", "value": "{{csrf_token}}"}], "url": "{{base_url}}/v1/admin/tracks/{{track_id}}"}}
       ]
     },
     {

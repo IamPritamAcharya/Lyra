@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Frontend phase — public identification UI (in progress).
+Current phase: Frontend phase — public identification and protected admin UI (implemented; local browser smoke test pending).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -25,6 +25,7 @@ Completed:
 - Panic recovery, restrictive security headers, and PostgreSQL backup/restore guidance are implemented.
 - Render web/worker blueprint, deployment environment documentation, and functional `make docker-build` target are implemented.
 - Static React/TypeScript/Vite public identification frontend is scaffolded and production-build verified.
+- Single-admin browser authentication is implemented: bcrypt password verification, opaque server-side PostgreSQL sessions, HttpOnly cookies, CSRF checks for catalog writes, 12-hour expiry, and per-IP login rate limiting.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
@@ -33,7 +34,7 @@ Known issues:
 - Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Run the frontend against a locally running API, then add a protected admin browser workflow only after browser authentication is designed.
+- Apply migration `000002_admin_sessions`, configure a real bcrypt admin password hash, and run a local browser login/catalog smoke test.
 
 Last verification:
 - `go test ./...`
@@ -43,3 +44,4 @@ Last verification:
 - `DATABASE_URL=... go test -tags=integration ./...` against local Compose PostgreSQL
 - `./lyra benchmark --synthetic-tracks=1000` → 2 ms, 200 query fingerprints, 4,200 in-memory synthetic postings; matched=true.
 - `go test -race ./...`, `go vet ./...`, and `golangci-lint run` passed on 2026-08-13.
+- `go test ./...`, `go vet ./...`, and `web: npm run lint && npm run build` passed after the admin-auth implementation on 2026-08-13.
