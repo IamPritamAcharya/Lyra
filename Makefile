@@ -47,5 +47,8 @@ eval: build
 benchmark: build
 	./lyra benchmark --synthetic-tracks=1000
 
-db-reset docker-build:
+docker-build:
+	docker build -t lyra:local .
+
+db-reset:
 	@echo "$@ is not available until its corresponding implementation phase is complete" >&2; exit 1

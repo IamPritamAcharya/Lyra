@@ -19,8 +19,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 - [completed] Phase 6: identification API
 - [in progress] Phase 7: evaluation
 - [completed] Phase 8: scalability hardening
-- [in progress] Phase 9: production hardening
-- [pending] Phase 10: deployment
+- [completed] Phase 9: production hardening
+- [in progress] Phase 10: deployment
 - [pending] Phase 11: release verification
 
 ## Architecture/Context
@@ -76,3 +76,5 @@ Hot-hash suppression now uses transactionally refreshed `fingerprint_hash_stats`
 Phase 9 began by removing the in-memory serving fallback. `serve` requires configured PostgreSQL, S3-compatible object storage, and the admin key; it verifies the reference bucket at startup. This prevents a process that cannot perform correct identification from reporting ready.
 
 Phase 9 adds panic recovery, restrictive HTTP security headers, and `scripts/backup.sh` with restore guidance in `docs/DEVELOPMENT.md`.
+
+Phase 10 adds `render.yaml`, `docs/DEPLOYMENT.md`, and a real `make docker-build` target. Docker execution has not been verified in this session because the Docker socket is inaccessible to the execution sandbox.

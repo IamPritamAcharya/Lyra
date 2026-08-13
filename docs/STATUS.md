@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 9 — production hardening (in progress).
+Current phase: Phase 10 — deployment (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -23,14 +23,15 @@ Completed:
 - Transactionally refreshed hash posting statistics and hot-hash suppression are implemented before PostgreSQL fingerprint lookup.
 - Serving now fails fast when PostgreSQL, object storage, or required security configuration is absent instead of exposing an in-memory fallback.
 - Panic recovery, restrictive security headers, and PostgreSQL backup/restore guidance are implemented.
+- Render web/worker blueprint, deployment environment documentation, and functional `make docker-build` target are implemented.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
+- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Add tracing and dependency failure/recovery tests. Generate/run the legal evaluation corpus when local dependencies are available.
+- Run `make docker-build` and full local smoke test where Docker access is available; add tracing/dependency failure tests and a legal evaluation corpus.
 
 Last verification:
 - `go test ./...`

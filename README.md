@@ -64,6 +64,10 @@ make db-migrate
 
 The binary supports `serve`, `worker`, `migrate`, `fingerprint`, and `eval` modes.
 
+## Deployment
+
+Use the same image for the API (`lyra serve`) and worker (`lyra worker`). The required environment variables, migration sequence, backup guidance, and Render blueprint are documented in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## License
 
 License selection is pending.
