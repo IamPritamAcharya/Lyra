@@ -12,7 +12,7 @@ cd ..
 make dev
 ```
 
-`make dev` starts local PostgreSQL, Valkey, MinIO, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Stop the application processes with `Ctrl-C`; run `make infra-down` when you also want to stop the infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
+`make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Stop the application processes with `Ctrl-C`; run `make infra-down` when you also want to stop the infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
 
 The browser admin is a single configured account. Generate its bcrypt password hash once, put only that hash in `.env`, and keep the plain-text password out of the repository:
 

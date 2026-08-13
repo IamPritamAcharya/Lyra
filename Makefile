@@ -40,7 +40,18 @@ infra-up:
 infra-down:
 	docker compose down
 
-dev: infra-up
+infra-wait:
+	@for attempt in $$(seq 1 30); do \
+		if docker compose exec -T postgres pg_isready -U lyra -d lyra >/dev/null 2>&1 \
+			&& docker compose exec -T valkey valkey-cli ping >/dev/null 2>&1 \
+			&& curl -fsS http://localhost:9000/minio/health/live >/dev/null; then \
+			echo "local infrastructure is ready"; exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "local infrastructure did not become ready within 30 seconds" >&2; exit 1
+
+dev: infra-up infra-wait
 	@test -f .env || { echo "missing .env; copy .env.example first" >&2; exit 1; }
 	@test -d web/node_modules || { echo "missing web dependencies; run: cd web && npm install" >&2; exit 1; }
 	@set -euo pipefail; \

@@ -24,7 +24,7 @@ cd web && npm install && cd ..
 make dev
 ```
 
-`make dev` starts PostgreSQL, Valkey, MinIO, runs migrations, then starts the Go API, worker, and Vite frontend. Stop all application processes with `Ctrl-C`; use `make infra-down` to stop the infrastructure too.
+`make dev` starts PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, then starts the Go API, worker, and Vite frontend. Stop all application processes with `Ctrl-C`; use `make infra-down` to stop the infrastructure too.
 
 Verify readiness:
 

@@ -45,3 +45,4 @@ Last verification:
 - `./lyra benchmark --synthetic-tracks=1000` → 2 ms, 200 query fingerprints, 4,200 in-memory synthetic postings; matched=true.
 - `go test -race ./...`, `go vet ./...`, and `golangci-lint run` passed on 2026-08-13.
 - `go test ./...`, `go vet ./...`, and `web: npm run lint && npm run build` passed after the admin-auth implementation on 2026-08-13.
+- `make dev` startup readiness wait was added after Docker returned before PostgreSQL accepted its first migration connection.
