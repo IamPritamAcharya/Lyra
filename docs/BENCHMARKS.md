@@ -9,7 +9,7 @@ Benchmark results are environment-specific measurements, not capacity claims. Re
 Command run on 2026-08-13:
 
 ```bash
-./lyra benchmark --synthetic-tracks=1000
+make benchmark
 ```
 
 Result:

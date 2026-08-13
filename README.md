@@ -26,6 +26,8 @@ make dev
 
 `make dev` starts PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, then starts the Go API, worker, and Vite frontend. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and local Docker infrastructure.
 
+An intentional `Ctrl-C` is a successful shutdown and exits `make dev` without an error. Local builds are written to ignored `bin/lyra`; the project root stays free of generated binaries.
+
 Local PostgreSQL and MinIO use named Docker volumes, so `make infra-down` does not erase tracks or uploaded reference audio. Removing the Docker volumes is a deliberate destructive reset.
 
 ## Logging

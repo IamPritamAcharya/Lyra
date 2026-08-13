@@ -1,5 +1,6 @@
 .env
 /lyra
+/bin/
 coverage.out
 .cache/
 web/node_modules/

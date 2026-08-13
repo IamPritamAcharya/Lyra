@@ -14,6 +14,8 @@ make dev
 
 `make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Open exactly that `localhost` URL: the API's development CORS policy intentionally permits it, not `127.0.0.1`. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and the Docker infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
 
+`Ctrl-C` is an intentional successful shutdown, so `make dev` exits with code 0 after cleanup. `make build`, `make db-migrate`, `make eval`, and `make benchmark` write/use the ignored `bin/lyra` binary; do not run bare `go build ./cmd/lyra`, which makes Go place a `lyra` executable at the repository root.
+
 PostgreSQL and MinIO are backed by named Docker volumes. `make infra-down` stops containers without deleting indexed tracks or reference audio. Only remove those Docker volumes when you deliberately want an empty local Lyra installation.
 
 ## Logging

@@ -59,7 +59,7 @@ Each phase meets its bootstrap acceptance checks. v1 only completes after all re
 
 ## Outcomes & Retrospective
 
-Phase 0 completed with deterministic extraction, hash boundary/silence tests, and a committed synthetic golden vector (244 fingerprints; SHA-256 asserted). It was verified with `go test ./...`, `go vet ./...`, `go build ./cmd/lyra`, and a local readiness smoke test.
+Phase 0 completed with deterministic extraction, hash boundary/silence tests, and a committed synthetic golden vector (244 fingerprints; SHA-256 asserted). It was verified with `go test ./...`, `go vet ./...`, `make build`, and a local readiness smoke test.
 
 Phase 2 has its initial migration/schema and a pgx catalog repository. The API integration and migration test remain open.
 
@@ -85,4 +85,4 @@ The user authorized a new frontend phase after the backend work. `web/` is a sta
 
 The frontend now includes the one permitted administrator workflow. `LYRA_ADMIN_USERNAME` and a bcrypt `LYRA_ADMIN_PASSWORD_HASH` configure the account. Successful login generates random opaque session and CSRF tokens; only SHA-256 token hashes are stored in PostgreSQL. The cookie is HttpOnly/SameSite=Lax (and configurable Secure), catalog writes require the CSRF header, sessions expire after 12 hours, and login has a per-IP limit. The static client receives no admin secret and keeps its CSRF token only in memory. `make dev` now starts local infrastructure, applies migrations, and runs API, worker, and Vite together. Go unit/vet and TypeScript lint/production-build checks passed; a real browser login smoke test remains pending.
 
-Development observability now uses a colorized structured `slog` terminal handler; production can set `LYRA_LOG_FORMAT=json`. `LYRA_LOG_LEVEL` controls debug/info/warn/error filtering. A redaction handler protects fields with sensitive names, while service lifecycle, HTTP status/request IDs, authentication results, uploads, indexing jobs, fingerprint counts, and identification results are logged with safe fields. `make dev` starts processes in isolated process groups and tears down API, worker, Vite, and Compose infrastructure on Ctrl-C while preserving named Docker volumes.
+Development observability now uses a colorized structured `slog` terminal handler; production can set `LYRA_LOG_FORMAT=json`. `LYRA_LOG_LEVEL` controls debug/info/warn/error filtering. A redaction handler protects fields with sensitive names, while service lifecycle, HTTP status/request IDs, authentication results, uploads, indexing jobs, fingerprint counts, and identification results are logged with safe fields. `make dev` starts processes in isolated process groups and tears down API, worker, Vite, and Compose infrastructure on Ctrl-C while preserving named Docker volumes. A Ctrl-C is reported as a successful exit. Make targets build to ignored `bin/lyra`, avoiding generated root binaries.
