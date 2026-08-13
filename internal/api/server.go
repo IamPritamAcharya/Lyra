@@ -146,7 +146,7 @@ func requestLog(log *slog.Logger, metrics *observability.Metrics, next http.Hand
 		case response.status >= http.StatusBadRequest:
 			log.Warn("http_request_completed", args...)
 		default:
-			log.Info("http_request_completed", args...)
+			log.Debug("http_request_completed", args...)
 		}
 	})
 }
