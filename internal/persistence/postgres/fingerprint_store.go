@@ -53,5 +53,8 @@ func (r *CatalogRepository) StoreTrack(ctx context.Context, publicID string, ver
 	if _, err := tx.Exec(ctx, `UPDATE tracks SET status='READY',fingerprint_version=$2,updated_at=now() WHERE id=$1`, id, version); err != nil {
 		return err
 	}
+	if _, err := tx.Exec(ctx, `INSERT INTO fingerprint_hash_stats(algorithm_version,hash,posting_count,updated_at) SELECT algorithm_version,hash,count(*),now() FROM fingerprints WHERE algorithm_version=$1 GROUP BY algorithm_version,hash ON CONFLICT (algorithm_version,hash) DO UPDATE SET posting_count=EXCLUDED.posting_count,updated_at=EXCLUDED.updated_at`, version); err != nil {
+		return fmt.Errorf("refresh hash stats: %w", err)
+	}
 	return tx.Commit(ctx)
 }

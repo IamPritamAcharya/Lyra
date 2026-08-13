@@ -36,3 +36,28 @@ func (r *CatalogRepository) Lookup(ctx context.Context, version int16, hashes []
 	}
 	return postings, nil
 }
+
+// FilterHashes removes very common hashes using maintained posting statistics.
+func (r *CatalogRepository) FilterHashes(ctx context.Context, version int16, hashes []uint32, maximum int64) ([]uint32, error) {
+	if len(hashes) == 0 {
+		return nil, nil
+	}
+	values := make([]int32, len(hashes))
+	for i, h := range hashes {
+		values[i] = int32(h)
+	}
+	rows, err := r.pool.Query(ctx, `SELECT hash FROM fingerprint_hash_stats WHERE algorithm_version=$1 AND hash=ANY($2) AND posting_count <= $3 ORDER BY hash`, version, values, maximum)
+	if err != nil {
+		return nil, fmt.Errorf("filter common hashes: %w", err)
+	}
+	defer rows.Close()
+	filtered := make([]uint32, 0, len(hashes))
+	for rows.Next() {
+		var hash int32
+		if err := rows.Scan(&hash); err != nil {
+			return nil, err
+		}
+		filtered = append(filtered, uint32(hash))
+	}
+	return filtered, rows.Err()
+}

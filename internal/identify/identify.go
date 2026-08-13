@@ -21,13 +21,19 @@ type Posting struct {
 type FingerprintIndex interface {
 	Lookup(context.Context, int16, []uint32) ([]Posting, error)
 }
+
+// HashFilter is optional because statistics are a scalability optimization, not correctness state.
+type HashFilter interface {
+	FilterHashes(context.Context, int16, []uint32, int64) ([]uint32, error)
+}
 type Config struct {
 	Version                                                                                                        int16
 	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors, MaxFingerprints, MaxPostings, MaxCandidates int
+	MaxPostingsPerHash                                                                                             int64
 }
 
 func DefaultConfig() Config {
-	return Config{Version: fingerprint.AlgorithmLandmarkV1, AlignmentTolerance: 2, MinAlignedHits: 6, MinDistinctHashes: 3, MinAnchors: 3, MaxFingerprints: 5000, MaxPostings: 50000, MaxCandidates: 1000}
+	return Config{Version: fingerprint.AlgorithmLandmarkV1, AlignmentTolerance: 2, MinAlignedHits: 6, MinDistinctHashes: 3, MinAnchors: 3, MaxFingerprints: 5000, MaxPostings: 50000, MaxCandidates: 1000, MaxPostingsPerHash: 10000}
 }
 
 type Candidate struct {
@@ -67,6 +73,16 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		hashes = append(hashes, h)
 	}
 	sort.Slice(hashes, func(i, j int) bool { return hashes[i] < hashes[j] })
+	if filter, ok := s.index.(HashFilter); ok && s.cfg.MaxPostingsPerHash > 0 {
+		var err error
+		hashes, err = filter.FilterHashes(ctx, s.cfg.Version, hashes, s.cfg.MaxPostingsPerHash)
+		if err != nil {
+			return Result{}, err
+		}
+		if len(hashes) == 0 {
+			return Result{}, ErrNoMatch
+		}
+	}
 	postings, err := s.index.Lookup(ctx, s.cfg.Version, hashes)
 	if err != nil {
 		return Result{}, err

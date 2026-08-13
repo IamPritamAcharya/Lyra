@@ -20,6 +20,7 @@ Completed:
 - Phase 6 completed with ephemeral multipart handling, public metadata responses, request IDs, request limits, and per-process identify rate limiting.
 - Synthetic matcher benchmark command implemented. Initial in-memory 1,000-track baseline completed; see `docs/BENCHMARKS.md`.
 - Prometheus-compatible HTTP and identification counters/latency summaries replace the metrics placeholder.
+- Transactionally refreshed hash posting statistics and hot-hash suppression are implemented before PostgreSQL fingerprint lookup.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
@@ -27,7 +28,7 @@ Known issues:
 - Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Add PostgreSQL posting safeguards/hash statistics and generate/run the legal evaluation corpus when local dependencies are available.
+- Generate/run the legal evaluation corpus when local dependencies are available; then continue production hardening and deployment work.
 
 Last verification:
 - `go test ./...`

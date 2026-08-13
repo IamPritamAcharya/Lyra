@@ -15,6 +15,15 @@ func (f *fakeIndex) Lookup(_ context.Context, _ int16, _ []uint32) ([]Posting, e
 	f.calls++
 	return f.postings, nil
 }
+
+type filteringIndex struct {
+	fakeIndex
+	allowed []uint32
+}
+
+func (f filteringIndex) FilterHashes(_ context.Context, _ int16, _ []uint32, _ int64) ([]uint32, error) {
+	return f.allowed, nil
+}
 func TestTemporalAlignmentWinsOverScatteredHits(t *testing.T) {
 	query := make([]fingerprint.Fingerprint, 10)
 	posts := make([]Posting, 0, 20)
@@ -59,5 +68,17 @@ func TestSafeguardsBoundWork(t *testing.T) {
 	r, err := New(idx, cfg).Match(context.Background(), query)
 	if err != nil || len(r.Candidates) != 1 {
 		t.Fatalf("%+v %v", r, err)
+	}
+}
+
+func TestCommonHashFilterSuppressesWeakHashes(t *testing.T) {
+	query := []fingerprint.Fingerprint{{Hash: 1, AnchorFrame: 1}}
+	cfg := DefaultConfig()
+	cfg.MinAlignedHits = 1
+	cfg.MinDistinctHashes = 1
+	cfg.MinAnchors = 1
+	_, err := New(&filteringIndex{fakeIndex: fakeIndex{postings: []Posting{{Hash: 1, TrackID: 1, AnchorFrame: 2}}}}, cfg).Match(context.Background(), query)
+	if err != ErrNoMatch {
+		t.Fatalf("err=%v", err)
 	}
 }

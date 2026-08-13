@@ -7,3 +7,5 @@ Hash payload layout is 20 bits: `f1` (8 bits) at bits 12–19, signed `df` (6-bi
 Identification will lookup deduplicated hashes in batches, vote by `(track, database_frame-query_frame)`, sum a ±2-frame offset neighbourhood, and reject candidates lacking sufficient aligned distinct evidence. These initial thresholds are deliberately documented as seeds until a legal evaluation corpus measures them.
 
 The current deterministic matcher queries the index once per deduplicated hash set and ranks candidates by aligned hits, distinct hashes, alignment span, then coherence. Its seed acceptance floors are six aligned hits, three distinct hashes, and three query anchors. These are not accuracy claims and must be calibrated by Phase 7 evaluation.
+
+For scalability, indexing refreshes `fingerprint_hash_stats` transactionally. The PostgreSQL index filters query hashes whose posting counts exceed the matcher’s default threshold of 10,000 before looking up postings. This is stop-word suppression: it preserves discriminative hashes while bounding work from common patterns.

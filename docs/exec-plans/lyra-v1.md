@@ -70,3 +70,5 @@ Phase 3 completed with safe no-shell FFmpeg/ffprobe execution, input validation,
 Reference upload endpoint wiring is now present: create track, post multipart reference audio, persist private object and metadata, then enqueue the indexing worker. A full local run awaits MinIO/Valkey image availability in this environment.
 
 Phase 8 began with bounded matcher work: maximum query fingerprints, postings, and candidates are enforced, and the query hash set is sorted for deterministic lookups. A reproducible synthetic benchmark exists. On 2026-08-13, 1,000 synthetic tracks / 4,200 postings / 200 query fingerprints completed in 2 ms in memory and returned a match. This is not a PostgreSQL or audio-accuracy claim.
+
+Hot-hash suppression now uses transactionally refreshed `fingerprint_hash_stats`; the PostgreSQL adapter filters hashes exceeding the configured maximum posting count prior to lookup. Unit tests verify suppression.
