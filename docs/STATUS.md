@@ -29,6 +29,7 @@ Completed:
 - Structured logging is implemented with colorized local text or production JSON, configurable severity, secret-token redaction, request status/request IDs, lifecycle, upload/indexing, matching, and authentication events.
 - `make dev` now gracefully stops API, worker, frontend, and Docker infrastructure on `Ctrl-C`; named database/object-storage volumes preserve data.
 - MIT licensing and contributor guidelines are published.
+- Local Compose includes Adminer at `http://localhost:8081` for PostgreSQL inspection; it is development-only and excluded from deployment.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.

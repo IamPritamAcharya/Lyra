@@ -56,6 +56,20 @@ Open [http://localhost:5173](http://localhost:5173). `make dev` waits for Postgr
 
 For local development only, the current ignored `.env` uses `admin` / `change-me`. Replace it before exposing the service anywhere.
 
+### Local database viewer
+
+`make dev` also starts [Adminer](https://www.adminer.org/) at [http://localhost:8081](http://localhost:8081). It is a local development tool only, not part of Lyra’s production deployment. Sign in with:
+
+```text
+System: PostgreSQL
+Server: postgres
+Username: lyra
+Password: lyra
+Database: lyra
+```
+
+Use it to inspect `tracks`, `track_audio`, `fingerprints`, `fingerprint_hash_stats`, and `admin_sessions`.
+
 ## How it works
 
 ```text

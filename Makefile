@@ -38,7 +38,7 @@ test-integration:
 verify: fmt vet test
 
 infra-up:
-	docker compose up -d postgres valkey minio
+	docker compose up -d postgres valkey minio adminer
 
 infra-down:
 	docker compose down
@@ -74,7 +74,7 @@ dev:
 	}; \
 	trap cleanup EXIT; \
 	trap 'interrupted=1; exit 0' INT TERM; \
-	docker compose up -d postgres valkey minio; \
+	docker compose up -d postgres valkey minio adminer; \
 	for attempt in $$(seq 1 30); do \
 		if docker compose exec -T postgres pg_isready -U lyra -d lyra >/dev/null 2>&1 \
 			&& docker compose exec -T valkey valkey-cli ping >/dev/null 2>&1 \

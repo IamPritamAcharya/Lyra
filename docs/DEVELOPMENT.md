@@ -18,6 +18,20 @@ make dev
 
 PostgreSQL and MinIO are backed by named Docker volumes. `make infra-down` stops containers without deleting indexed tracks or reference audio. Only remove those Docker volumes when you deliberately want an empty local Lyra installation.
 
+## Database viewer
+
+Adminer is included only in the local Compose profile. `make dev` and `make infra-up` expose it at [http://localhost:8081](http://localhost:8081). Use:
+
+```text
+System: PostgreSQL
+Server: postgres
+Username: lyra
+Password: lyra
+Database: lyra
+```
+
+Adminer is for inspecting local PostgreSQL tables and running development SQL. It is not part of Lyra’s application image or production deployment. Do not expose it publicly.
+
 ## Logging
 
 `LYRA_LOG_FORMAT=text` emits colorized terminal logs for local development. `LYRA_LOG_FORMAT=json` emits structured JSON for production collectors. Set `LYRA_LOG_LEVEL` to `debug`, `info`, `warn`, or `error`; production should normally use `info` or `warn` with JSON.
