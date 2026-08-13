@@ -18,8 +18,8 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 - [completed] Phase 5: matcher
 - [completed] Phase 6: identification API
 - [in progress] Phase 7: evaluation
-- [in progress] Phase 8: scalability hardening
-- [pending] Phase 9: production hardening
+- [completed] Phase 8: scalability hardening
+- [in progress] Phase 9: production hardening
 - [pending] Phase 10: deployment
 - [pending] Phase 11: release verification
 
@@ -72,3 +72,5 @@ Reference upload endpoint wiring is now present: create track, post multipart re
 Phase 8 began with bounded matcher work: maximum query fingerprints, postings, and candidates are enforced, and the query hash set is sorted for deterministic lookups. A reproducible synthetic benchmark exists. On 2026-08-13, 1,000 synthetic tracks / 4,200 postings / 200 query fingerprints completed in 2 ms in memory and returned a match. This is not a PostgreSQL or audio-accuracy claim.
 
 Hot-hash suppression now uses transactionally refreshed `fingerprint_hash_stats`; the PostgreSQL adapter filters hashes exceeding the configured maximum posting count prior to lookup. Unit tests verify suppression.
+
+Phase 9 began by removing the in-memory serving fallback. `serve` requires configured PostgreSQL, S3-compatible object storage, and the admin key; it verifies the reference bucket at startup. This prevents a process that cannot perform correct identification from reporting ready.

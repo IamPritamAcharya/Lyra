@@ -22,9 +22,10 @@ type FileIdentifier interface {
 func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.Repository, metrics *observability.Metrics) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
+		matched := false
 		defer func() {
 			if metrics != nil {
-				metrics.ObserveIdentify(time.Since(started), false)
+				metrics.ObserveIdentify(time.Since(started), matched)
 			}
 		}()
 		requestID := newRequestID()
@@ -67,10 +68,7 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 			}
 			response["match"] = map[string]any{"track_id": track.PublicID, "title": track.Title, "artist": track.ArtistName, "album": track.AlbumName, "confidence": result.Candidate.AlignmentCoherence, "reference_offset_ms": result.Candidate.BestAlignmentOffset * fingerprint.HopSize * 1000 / fingerprint.SampleRate}
 		}
-		if metrics != nil {
-			metrics.ObserveIdentify(time.Since(started), result.Matched)
-			metrics = nil
-		}
+		matched = result.Matched
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
 			response["reason"] = "insufficient_audio_signal"
 		}

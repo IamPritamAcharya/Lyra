@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 8 — scalability hardening (in progress).
+Current phase: Phase 9 — production hardening (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -21,6 +21,7 @@ Completed:
 - Synthetic matcher benchmark command implemented. Initial in-memory 1,000-track baseline completed; see `docs/BENCHMARKS.md`.
 - Prometheus-compatible HTTP and identification counters/latency summaries replace the metrics placeholder.
 - Transactionally refreshed hash posting statistics and hot-hash suppression are implemented before PostgreSQL fingerprint lookup.
+- Serving now fails fast when PostgreSQL, object storage, or required security configuration is absent instead of exposing an in-memory fallback.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
@@ -28,7 +29,7 @@ Known issues:
 - Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Generate/run the legal evaluation corpus when local dependencies are available; then continue production hardening and deployment work.
+- Add tracing, backup/restore guidance, and failure/recovery tests. Generate/run the legal evaluation corpus when local dependencies are available.
 
 Last verification:
 - `go test ./...`

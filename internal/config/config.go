@@ -42,6 +42,12 @@ func Load() (Config, error) {
 	if c.Security.MaxIdentifyBytes <= 0 {
 		return c, fmt.Errorf("LYRA_MAX_IDENTIFY_BYTES must be positive")
 	}
+	if c.Database.URL == "" {
+		return c, fmt.Errorf("DATABASE_URL is required")
+	}
+	if c.Security.AdminAPIKey == "" {
+		return c, fmt.Errorf("LYRA_ADMIN_API_KEY is required")
+	}
 	return c, nil
 }
 func value(k, fallback string) string {
