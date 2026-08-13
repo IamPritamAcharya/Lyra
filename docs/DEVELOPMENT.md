@@ -12,7 +12,15 @@ cd ..
 make dev
 ```
 
-`make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Stop the application processes with `Ctrl-C`; run `make infra-down` when you also want to stop the infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
+`make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Open exactly that `localhost` URL: the API's development CORS policy intentionally permits it, not `127.0.0.1`. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and the Docker infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
+
+PostgreSQL and MinIO are backed by named Docker volumes. `make infra-down` stops containers without deleting indexed tracks or reference audio. Only remove those Docker volumes when you deliberately want an empty local Lyra installation.
+
+## Logging
+
+`LYRA_LOG_FORMAT=text` emits colorized terminal logs for local development. `LYRA_LOG_FORMAT=json` emits structured JSON for production collectors. Set `LYRA_LOG_LEVEL` to `debug`, `info`, `warn`, or `error`; production should normally use `info` or `warn` with JSON.
+
+Every operational event uses a stable event name such as `track_indexed`, `identification_completed`, or `admin_login_rejected`. Useful safe fields include request ID, public track ID, status, fingerprint count, candidate count, match statistics, HTTP status, and duration. Never add raw query audio, file content, passwords, password hashes, session IDs, cookies, CSRF tokens, API keys, or storage credentials to a log field. The logger redacts common sensitive field names as an additional safeguard.
 
 The browser admin is a single configured account. Generate its bcrypt password hash once, put only that hash in `.env`, and keep the plain-text password out of the repository:
 
@@ -21,6 +29,10 @@ htpasswd -bnBC 12 "" 'choose-a-long-unique-password' | tr -d ':\n'
 ```
 
 Set the result as `LYRA_ADMIN_PASSWORD_HASH`; optionally change `LYRA_ADMIN_USERNAME`. `LYRA_ADMIN_COOKIE_SECURE=false` is for local HTTP only. Set it to `true` for HTTPS deployments. The browser receives an HttpOnly session cookie and an in-memory CSRF token—not an admin secret.
+
+## Manual audio checks
+
+Use `testdata/audio/` for a full local reference recording and `testdata/queries/` for a short excerpt from that exact recording. Those directories are intentionally ignored by Git so manually downloaded or copyrighted audio cannot be committed. Upload the full file through the Admin UI, wait for `READY`, then submit its excerpt through the Identify UI. For a dependable initial check, use a 5–10 second excerpt cut directly from the exact uploaded file.
 
 ## Backups
 

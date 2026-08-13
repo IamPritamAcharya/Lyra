@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/lyra/lyra/internal/audio"
@@ -30,56 +32,67 @@ type Worker struct {
 	Store    FingerprintStore
 	Failures FailureRecorder
 	Audio    audio.Processor
+	Log      *slog.Logger
 }
 
 func (w Worker) HandleFingerprintTask(ctx context.Context, task *asynq.Task) error {
+	started := time.Now()
 	var payload queue.FingerprintTrackPayload
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+		w.Log.Error("fingerprint_job_failed", "reason", "invalid_payload", "error", err)
 		return fmt.Errorf("decode fingerprint task: %w", err)
 	}
-	err := w.index(ctx, payload.TrackID)
+	w.Log.Info("fingerprint_job_started", "track_id", payload.TrackID)
+	fingerprintCount, err := w.index(ctx, payload.TrackID)
 	if err != nil && w.Failures != nil {
 		_ = w.Failures.Fail(ctx, payload.TrackID, err.Error())
+		w.Log.Error("fingerprint_job_failed", "track_id", payload.TrackID, "duration_ms", time.Since(started).Milliseconds(), "error", err)
+	} else if err == nil {
+		w.Log.Info("track_indexed", "track_id", payload.TrackID, "status", "READY", "fingerprints", fingerprintCount, "duration_ms", time.Since(started).Milliseconds())
 	}
 	return err
 }
-func (w Worker) index(ctx context.Context, trackID string) error {
+func (w Worker) index(ctx context.Context, trackID string) (int, error) {
 	key, err := w.Locate.ObjectKey(ctx, trackID)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	object, err := w.Objects.Get(ctx, key)
 	if err != nil {
-		return fmt.Errorf("get reference object: %w", err)
+		return 0, fmt.Errorf("get reference object: %w", err)
 	}
 	defer object.Close()
 	tmp, err := os.CreateTemp("", "lyra-reference-*")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	name := tmp.Name()
 	defer os.Remove(name)
 	if _, err := io.Copy(tmp, object); err != nil {
 		tmp.Close()
-		return err
+		return 0, err
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		return 0, err
 	}
 	if _, err := w.Audio.Probe(ctx, name); err != nil {
-		return err
+		return 0, err
 	}
 	pcm, err := w.Audio.Normalize(ctx, name)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	samples, err := audio.PCM16LE(pcm)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	fps, err := fingerprint.Extract(samples)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return w.Store.StoreTrack(ctx, trackID, fingerprint.AlgorithmLandmarkV1, fps)
+	w.Log.Debug("fingerprints_generated", "track_id", trackID, "fingerprints", len(fps))
+	if err := w.Store.StoreTrack(ctx, trackID, fingerprint.AlgorithmLandmarkV1, fps); err != nil {
+		return 0, err
+	}
+	return len(fps), nil
 }

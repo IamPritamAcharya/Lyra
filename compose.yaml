@@ -6,6 +6,7 @@ services:
       POSTGRES_USER: lyra
       POSTGRES_PASSWORD: lyra
     ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
   valkey:
     image: valkey/valkey:8-alpine
     ports: ["6379:6379"]
@@ -16,6 +17,7 @@ services:
       MINIO_ROOT_USER: lyra-minio
       MINIO_ROOT_PASSWORD: lyra-minio-secret
     ports: ["9000:9000", "9001:9001"]
+    volumes: ["minio_data:/data"]
   lyra:
     build: .
     environment:
@@ -29,3 +31,7 @@ services:
       S3_ENDPOINT: minio:9000
     ports: ["8080:8080"]
     depends_on: [postgres, valkey, minio]
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -26,6 +26,8 @@ Completed:
 - Render web/worker blueprint, deployment environment documentation, and functional `make docker-build` target are implemented.
 - Static React/TypeScript/Vite public identification frontend is scaffolded and production-build verified.
 - Single-admin browser authentication is implemented: bcrypt password verification, opaque server-side PostgreSQL sessions, HttpOnly cookies, CSRF checks for catalog writes, 12-hour expiry, and per-IP login rate limiting.
+- Structured logging is implemented with colorized local text or production JSON, configurable severity, secret-token redaction, request status/request IDs, lifecycle, upload/indexing, matching, and authentication events.
+- `make dev` now gracefully stops API, worker, frontend, and Docker infrastructure on `Ctrl-C`; named database/object-storage volumes preserve data.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
@@ -35,6 +37,11 @@ Known issues:
 
 Next:
 - Run `make dev` to apply migration `000002_admin_sessions` and complete the local browser login/catalog smoke test.
+
+Manual local test data:
+- `testdata/audio/side-to-side.mp3` (237.9 seconds) and `testdata/audio/kalyani.mp3` (287.3 seconds) are full local references.
+- `testdata/queries/side-to-side-clip.mp3` (24.2 seconds) and `testdata/queries/kalyani-clip.mp3` (14.8 seconds) are their local query clips.
+- These manually downloaded files are Git-ignored and must not be committed. The Docker database inspected on 2026-08-13 had no tracks/fingerprints, so the references need uploading again before matching can be evaluated.
 
 Last verification:
 - `go test ./...`
@@ -46,3 +53,5 @@ Last verification:
 - `go test -race ./...`, `go vet ./...`, and `golangci-lint run` passed on 2026-08-13.
 - `go test ./...`, `go vet ./...`, and `web: npm run lint && npm run build` passed after the admin-auth implementation on 2026-08-13.
 - `make dev` startup readiness wait was added after Docker returned before PostgreSQL accepted its first migration connection.
+- `make dev` launches Vite using `localhost` to match the deliberately restricted local CORS origin.
+- `go test ./...`, `go vet ./...`, and `golangci-lint run` passed after logging and development shutdown changes on 2026-08-13.

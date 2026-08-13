@@ -28,18 +28,18 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	if limit <= 0 {
 		limit = 30
 	}
-	mux.Handle("POST /v1/identify", newLimiter(limit).middleware(identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo, metrics)))
+	mux.Handle("POST /v1/identify", newLimiter(limit).middleware(identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo, metrics, log)))
 	admin := http.NewServeMux()
-	admin.HandleFunc("POST /v1/admin/tracks", createTrack(repo))
+	admin.HandleFunc("POST /v1/admin/tracks", createTrack(repo, log))
 	admin.HandleFunc("GET /v1/admin/tracks", listTracks(repo))
 	admin.HandleFunc("GET /v1/admin/tracks/{id}", getTrack(repo))
-	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo))
-	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes))
+	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo, log))
+	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes, log))
 	if auth != nil {
-		mux.Handle("POST /v1/admin/auth/login", newLimiter(5).middleware(login(auth, cfg.Security.AdminCookieSecure)))
-		mux.HandleFunc("POST /v1/admin/auth/logout", logout(auth, cfg.Security.AdminCookieSecure))
+		mux.Handle("POST /v1/admin/auth/login", newLimiter(5).middleware(login(auth, cfg.Security.AdminCookieSecure, log)))
+		mux.HandleFunc("POST /v1/admin/auth/logout", logout(auth, cfg.Security.AdminCookieSecure, log))
 		mux.HandleFunc("GET /v1/admin/auth/session", sessionStatus(auth))
-		mux.Handle("/v1/admin/", requireSession(auth, admin))
+		mux.Handle("/v1/admin/", requireSession(auth, admin, log))
 	} else {
 		mux.Handle("/v1/admin/", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			writeError(w, http.StatusServiceUnavailable, "admin_auth_unavailable")
@@ -48,7 +48,7 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	return recoverPanic(log, secureHeaders(cors(cfg.HTTP.AllowedOrigin, requestLog(log, metrics, mux))))
 }
 
-func createTrack(repo catalog.Repository) http.HandlerFunc {
+func createTrack(repo catalog.Repository, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Title  string  `json:"title"`
@@ -60,6 +60,9 @@ func createTrack(repo catalog.Repository) http.HandlerFunc {
 			return
 		}
 		t, err := repo.Create(r.Context(), catalog.CreateTrack{Title: in.Title, ArtistName: in.Artist, AlbumName: in.Album})
+		if err == nil {
+			log.Info("track_created", "track_id", t.PublicID, "title", t.Title, "artist", t.ArtistName)
+		}
 		writeResult(w, t, err, http.StatusCreated)
 	}
 }
@@ -83,7 +86,7 @@ func getTrack(repo catalog.Repository) http.HandlerFunc {
 		writeResult(w, v, err, http.StatusOK)
 	}
 }
-func deleteTrack(repo catalog.Repository) http.HandlerFunc {
+func deleteTrack(repo catalog.Repository, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		track, err := repo.Get(r.Context(), id)
@@ -96,6 +99,9 @@ func deleteTrack(repo catalog.Repository) http.HandlerFunc {
 		}
 		if err == nil {
 			track, err = repo.Transition(r.Context(), id, catalog.Deleted, nil)
+		}
+		if err == nil {
+			log.Info("track_deleted", "track_id", id)
 		}
 		writeResult(w, track, err, http.StatusNoContent)
 	}
@@ -126,8 +132,37 @@ func writeError(w http.ResponseWriter, status int, code string) {
 func requestLog(log *slog.Logger, metrics *observability.Metrics, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
-		next.ServeHTTP(w, r)
-		metrics.ObserveHTTP(time.Since(started))
-		log.Info("http_request_completed", "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(started).Milliseconds())
+		response := &statusResponseWriter{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(response, r)
+		duration := time.Since(started)
+		metrics.ObserveHTTP(duration)
+		args := []any{"method", r.Method, "path", r.URL.Path, "status", response.status, "duration_ms", duration.Milliseconds(), "response_bytes", response.bytes}
+		if requestID := response.Header().Get("X-Request-ID"); requestID != "" {
+			args = append(args, "request_id", requestID)
+		}
+		switch {
+		case response.status >= http.StatusInternalServerError:
+			log.Error("http_request_completed", args...)
+		case response.status >= http.StatusBadRequest:
+			log.Warn("http_request_completed", args...)
+		default:
+			log.Info("http_request_completed", args...)
+		}
 	})
+}
+
+type statusResponseWriter struct {
+	http.ResponseWriter
+	status int
+	bytes  int64
+}
+
+func (w *statusResponseWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+func (w *statusResponseWriter) Write(body []byte) (int, error) {
+	n, err := w.ResponseWriter.Write(body)
+	w.bytes += int64(n)
+	return n, err
 }

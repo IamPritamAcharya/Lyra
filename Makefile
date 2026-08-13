@@ -51,17 +51,39 @@ infra-wait:
 	done; \
 	echo "local infrastructure did not become ready within 30 seconds" >&2; exit 1
 
-dev: infra-up infra-wait
+dev:
 	@test -f .env || { echo "missing .env; copy .env.example first" >&2; exit 1; }
 	@test -d web/node_modules || { echo "missing web dependencies; run: cd web && npm install" >&2; exit 1; }
 	@set -euo pipefail; \
-	set -a; source ./.env; set +a; \
-	go run ./cmd/lyra migrate; \
-	go run ./cmd/lyra serve & api_pid=$$!; \
-	go run ./cmd/lyra worker & worker_pid=$$!; \
-	(cd web && npm run dev -- --host 127.0.0.1) & web_pid=$$!; \
-	cleanup() { kill $$api_pid $$worker_pid $$web_pid 2>/dev/null || true; wait $$api_pid $$worker_pid $$web_pid 2>/dev/null || true; }; \
+	api_pid=""; worker_pid=""; web_pid=""; \
+	cleanup() { \
+		result=$$?; trap - EXIT INT TERM; \
+		echo "stopping Lyra development services..."; \
+		for pid in "$$api_pid" "$$worker_pid" "$$web_pid"; do \
+			if [ -n "$$pid" ]; then kill -TERM -- "-$$pid" 2>/dev/null || true; fi; \
+		done; \
+		for pid in "$$api_pid" "$$worker_pid" "$$web_pid"; do \
+			if [ -n "$$pid" ]; then wait "$$pid" 2>/dev/null || true; fi; \
+		done; \
+		docker compose down; \
+		exit "$$result"; \
+	}; \
 	trap cleanup EXIT INT TERM; \
+	docker compose up -d postgres valkey minio; \
+	for attempt in $$(seq 1 30); do \
+		if docker compose exec -T postgres pg_isready -U lyra -d lyra >/dev/null 2>&1 \
+			&& docker compose exec -T valkey valkey-cli ping >/dev/null 2>&1 \
+			&& curl -fsS http://localhost:9000/minio/health/live >/dev/null; then break; fi; \
+		if [ "$$attempt" -eq 30 ]; then echo "local infrastructure did not become ready within 30 seconds" >&2; exit 1; fi; \
+		sleep 1; \
+	done; \
+	echo "local infrastructure is ready"; \
+	set -a; source ./.env; set +a; \
+	go build ./cmd/lyra; \
+	./lyra migrate; \
+	setsid ./lyra serve & api_pid=$$!; \
+	setsid ./lyra worker & worker_pid=$$!; \
+	(cd web && exec setsid npm run dev) & web_pid=$$!; \
 	wait -n $$api_pid $$worker_pid $$web_pid
 
 db-migrate: build

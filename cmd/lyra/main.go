@@ -15,6 +15,7 @@ import (
 	"github.com/lyra/lyra/internal/benchmark"
 	"github.com/lyra/lyra/internal/config"
 	"github.com/lyra/lyra/internal/fingerprint"
+	"github.com/lyra/lyra/internal/observability"
 	lyrapostgres "github.com/lyra/lyra/internal/persistence/postgres"
 )
 
@@ -65,9 +66,15 @@ func main() {
 		if cfg.Database.URL == "" {
 			fail(fmt.Errorf("DATABASE_URL is required for migrations"))
 		}
+		log, err := newLogger(cfg)
+		if err != nil {
+			fail(err)
+		}
+		log.Info("migration_started")
 		if err := lyrapostgres.MigrateUp(cfg.Database.URL, "db/migrations"); err != nil {
 			fail(err)
 		}
+		log.Info("migration_completed")
 	case "worker":
 		cfg, err := config.Load()
 		if err != nil {
@@ -75,7 +82,11 @@ func main() {
 		}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
-		if err := app.Worker(ctx, cfg); err != nil {
+		log, err := newLogger(cfg)
+		if err != nil {
+			fail(err)
+		}
+		if err := app.Worker(ctx, cfg, log); err != nil {
 			fail(err)
 		}
 	case "serve":
@@ -85,7 +96,12 @@ func main() {
 		}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
-		if err := app.Serve(ctx, cfg, slog.Default()); err != nil {
+		log, err := newLogger(cfg)
+		if err != nil {
+			fail(err)
+		}
+		slog.SetDefault(log)
+		if err := app.Serve(ctx, cfg, log); err != nil {
 			fail(err)
 		}
 	case "fingerprint":
@@ -116,3 +132,7 @@ func usage() {
 	os.Exit(2)
 }
 func fail(err error) { fmt.Fprintln(os.Stderr, "lyra:", err); os.Exit(1) }
+
+func newLogger(cfg config.Config) (*slog.Logger, error) {
+	return observability.NewLogger(os.Stderr, observability.LoggingConfig{Level: cfg.Observability.LogLevel, Format: cfg.Observability.LogFormat})
+}

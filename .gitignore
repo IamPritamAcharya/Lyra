@@ -6,6 +6,11 @@ web/node_modules/
 web/dist/
 web/.env
 web/*.tsbuildinfo
+# Locally downloaded audio may be used for manual checks, but it must never be committed.
+testdata/audio/*
+testdata/queries/*
+!testdata/audio/.gitkeep
+!testdata/queries/.gitkeep
 tmp/
 data/
 postman/*.local.json

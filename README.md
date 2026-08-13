@@ -24,7 +24,13 @@ cd web && npm install && cd ..
 make dev
 ```
 
-`make dev` starts PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, then starts the Go API, worker, and Vite frontend. Stop all application processes with `Ctrl-C`; use `make infra-down` to stop the infrastructure too.
+`make dev` starts PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, then starts the Go API, worker, and Vite frontend. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and local Docker infrastructure.
+
+Local PostgreSQL and MinIO use named Docker volumes, so `make infra-down` does not erase tracks or uploaded reference audio. Removing the Docker volumes is a deliberate destructive reset.
+
+## Logging
+
+Local development defaults to colorized structured text logs. Set `LYRA_LOG_LEVEL` to `debug`, `info`, `warn`, or `error`; set `LYRA_LOG_FORMAT=json` for production log collection. Logs include request IDs, lifecycle events, indexing/fingerprint counts, and safe matching statistics. Passwords, secrets, cookies, CSRF values, session tokens, and query audio are never logged.
 
 Verify readiness:
 
