@@ -2,6 +2,10 @@
   <img src="web/public/brand/lyra-lockup.svg" width="300" alt="Lyra" />
 </p>
 
+<p align="center">
+  <img src="web/public/brand/lyra-banner.svg" width="100%" alt="Lyra — Find the music in the noise" />
+</p>
+
 <p align="center"><strong>Find the music in the noise.</strong></p>
 
 <p align="center">

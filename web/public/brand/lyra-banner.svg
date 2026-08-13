@@ -1,0 +1,15 @@
+<svg width="1280" height="420" viewBox="0 0 1280 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Lyra — Find the music in the noise</title>
+  <desc id="desc">A dark acoustic waveform banner for the Lyra project</desc>
+  <defs>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientTransform="translate(925 68) rotate(138) scale(530 360)" gradientUnits="userSpaceOnUse"><stop stop-color="#818CF8" stop-opacity=".26"/><stop offset="1" stop-color="#818CF8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientTransform="translate(190 372) rotate(-42) scale(510 320)" gradientUnits="userSpaceOnUse"><stop stop-color="#C084FC" stop-opacity=".14"/><stop offset="1" stop-color="#C084FC" stop-opacity="0"/></radialGradient>
+    <linearGradient id="wave" x1="590" y1="88" x2="1180" y2="330" gradientUnits="userSpaceOnUse"><stop stop-color="#A5B4FC"/><stop offset=".5" stop-color="#C084FC"/><stop offset="1" stop-color="#67E8F9"/></linearGradient>
+  </defs>
+  <rect width="1280" height="420" fill="#080B14"/><rect width="1280" height="420" fill="url(#glowA)"/><rect width="1280" height="420" fill="url(#glowB)"/>
+  <path d="M574 260H644C672 260 680 174 710 174C744 174 750 316 792 316C834 316 841 99 882 99C924 99 931 279 973 279C1008 279 1018 204 1052 204H1206" stroke="url(#wave)" stroke-opacity=".82" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="882" cy="99" r="15" fill="#F5F3FF" stroke="#C084FC" stroke-width="7"/>
+  <text x="100" y="140" fill="#67E8F9" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="5">ACOUSTIC LANDMARK RECOGNITION</text>
+  <text x="100" y="227" fill="#F5F3FF" font-family="Arial, Helvetica, sans-serif" font-size="80" font-weight="700" letter-spacing="10">LYRA</text>
+  <text x="100" y="289" fill="#A5ADC5" font-family="Arial, Helvetica, sans-serif" font-size="28">Find the music in the noise.</text>
+</svg>
