@@ -22,6 +22,7 @@ Completed:
 - Prometheus-compatible HTTP and identification counters/latency summaries replace the metrics placeholder.
 - Transactionally refreshed hash posting statistics and hot-hash suppression are implemented before PostgreSQL fingerprint lookup.
 - Serving now fails fast when PostgreSQL, object storage, or required security configuration is absent instead of exposing an in-memory fallback.
+- Panic recovery, restrictive security headers, and PostgreSQL backup/restore guidance are implemented.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
@@ -29,7 +30,7 @@ Known issues:
 - Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Add tracing, backup/restore guidance, and failure/recovery tests. Generate/run the legal evaluation corpus when local dependencies are available.
+- Add tracing and dependency failure/recovery tests. Generate/run the legal evaluation corpus when local dependencies are available.
 
 Last verification:
 - `go test ./...`

@@ -74,3 +74,5 @@ Phase 8 began with bounded matcher work: maximum query fingerprints, postings, a
 Hot-hash suppression now uses transactionally refreshed `fingerprint_hash_stats`; the PostgreSQL adapter filters hashes exceeding the configured maximum posting count prior to lookup. Unit tests verify suppression.
 
 Phase 9 began by removing the in-memory serving fallback. `serve` requires configured PostgreSQL, S3-compatible object storage, and the admin key; it verifies the reference bucket at startup. This prevents a process that cannot perform correct identification from reporting ready.
+
+Phase 9 adds panic recovery, restrictive HTTP security headers, and `scripts/backup.sh` with restore guidance in `docs/DEVELOPMENT.md`.
