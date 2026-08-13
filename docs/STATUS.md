@@ -19,14 +19,15 @@ Completed:
 - Phase 4 worker execution mode and Phase 5 matcher are implemented; Phase 6 multipart identify handler is wired to the matcher.
 - Phase 6 completed with ephemeral multipart handling, public metadata responses, request IDs, request limits, and per-process identify rate limiting.
 - Synthetic matcher benchmark command implemented. Initial in-memory 1,000-track baseline completed; see `docs/BENCHMARKS.md`.
+- Prometheus-compatible HTTP and identification counters/latency summaries replace the metrics placeholder.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. Evaluation corpus and metrics instrumentation remain unimplemented.
+- Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Add PostgreSQL posting safeguards/hash statistics and Prometheus metrics; generate and run the legal evaluation corpus when local dependencies are available.
+- Add PostgreSQL posting safeguards/hash statistics and generate/run the legal evaluation corpus when local dependencies are available.
 
 Last verification:
 - `go test ./...`

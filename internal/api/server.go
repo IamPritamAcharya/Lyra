@@ -11,6 +11,7 @@ import (
 
 	"github.com/lyra/lyra/internal/catalog"
 	"github.com/lyra/lyra/internal/config"
+	"github.com/lyra/lyra/internal/observability"
 )
 
 func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready func(*http.Request) error, identifier FileIdentifier, uploader ReferenceUploader) http.Handler {
@@ -22,15 +23,13 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 		}
 		return map[string]string{"status": "ready"}, nil
 	}))
-	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-		_, _ = w.Write([]byte("# HELP lyra_http_requests_total Requests handled by Lyra\n# TYPE lyra_http_requests_total counter\nlyra_http_requests_total 0\n"))
-	})
+	metrics := observability.NewMetrics()
+	mux.Handle("GET /metrics", metrics.Handler())
 	limit := cfg.Security.IdentifyPerMinute
 	if limit <= 0 {
 		limit = 30
 	}
-	mux.Handle("POST /v1/identify", newLimiter(limit).middleware(identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo)))
+	mux.Handle("POST /v1/identify", newLimiter(limit).middleware(identifyHandler(cfg.Security.MaxIdentifyBytes, identifier, repo, metrics)))
 	admin := http.NewServeMux()
 	admin.HandleFunc("POST /v1/admin/tracks", createTrack(repo))
 	admin.HandleFunc("GET /v1/admin/tracks", listTracks(repo))
@@ -38,7 +37,7 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo))
 	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes))
 	mux.Handle("/v1/admin/", requireAdmin(cfg.Security.AdminAPIKey, admin))
-	return requestLog(log, mux)
+	return requestLog(log, metrics, mux)
 }
 
 func createTrack(repo catalog.Repository) http.HandlerFunc {
@@ -126,10 +125,11 @@ func writeError(w http.ResponseWriter, status int, code string) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": code})
 }
-func requestLog(log *slog.Logger, next http.Handler) http.Handler {
+func requestLog(log *slog.Logger, metrics *observability.Metrics, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		next.ServeHTTP(w, r)
+		metrics.ObserveHTTP(time.Since(started))
 		log.Info("http_request_completed", "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(started).Milliseconds())
 	})
 }

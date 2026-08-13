@@ -9,6 +9,7 @@ import (
 	"github.com/lyra/lyra/internal/catalog"
 	"github.com/lyra/lyra/internal/fingerprint"
 	"github.com/lyra/lyra/internal/identify"
+	"github.com/lyra/lyra/internal/observability"
 	"net/http"
 	"os"
 	"time"
@@ -18,9 +19,14 @@ type FileIdentifier interface {
 	IdentifyFile(context.Context, string) (identify.Result, error)
 }
 
-func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.Repository) http.HandlerFunc {
+func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.Repository, metrics *observability.Metrics) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
+		defer func() {
+			if metrics != nil {
+				metrics.ObserveIdentify(time.Since(started), false)
+			}
+		}()
 		requestID := newRequestID()
 		w.Header().Set("X-Request-ID", requestID)
 		if identifier == nil {
@@ -60,6 +66,10 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 				return
 			}
 			response["match"] = map[string]any{"track_id": track.PublicID, "title": track.Title, "artist": track.ArtistName, "album": track.AlbumName, "confidence": result.Candidate.AlignmentCoherence, "reference_offset_ms": result.Candidate.BestAlignmentOffset * fingerprint.HopSize * 1000 / fingerprint.SampleRate}
+		}
+		if metrics != nil {
+			metrics.ObserveIdentify(time.Since(started), result.Matched)
+			metrics = nil
 		}
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
 			response["reason"] = "insufficient_audio_signal"
