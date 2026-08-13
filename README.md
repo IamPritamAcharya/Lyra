@@ -12,6 +12,7 @@
   <a href="#quick-start">Quick start</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="docs/DEVELOPMENT.md">Development</a> ·
   <a href="docs/DEPLOYMENT.md">Deployment</a>
 </p>
@@ -126,4 +127,4 @@ For an API-first test, import [Lyra.postman_collection.json](postman/Lyra.postma
 
 ## License
 
-License selection is pending.
+Lyra is available under the [MIT License](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) to help improve it.

@@ -28,6 +28,7 @@ Completed:
 - Single-admin browser authentication is implemented: bcrypt password verification, opaque server-side PostgreSQL sessions, HttpOnly cookies, CSRF checks for catalog writes, 12-hour expiry, and per-IP login rate limiting.
 - Structured logging is implemented with colorized local text or production JSON, configurable severity, secret-token redaction, request status/request IDs, lifecycle, upload/indexing, matching, and authentication events.
 - `make dev` now gracefully stops API, worker, frontend, and Docker infrastructure on `Ctrl-C`; named database/object-storage volumes preserve data.
+- MIT licensing and contributor guidelines are published.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
