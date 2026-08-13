@@ -34,6 +34,7 @@ Latest evaluation: not yet available; no recognition claims have been measured.
 
 Latest brand verification:
 - `web: npm run lint && npm run build` passed after the native SVG identity, responsive UI refresh, and README update on 2026-08-13.
+- Brand refinement removes external fonts, repeated backdrop blurs, and glow-heavy effects after local UI responsiveness feedback; the SVG mark was simplified to a minimal lyre/spectral form.
 
 Known issues:
 - Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.

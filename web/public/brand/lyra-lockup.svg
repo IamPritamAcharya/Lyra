@@ -1,8 +1,8 @@
 <svg width="360" height="96" viewBox="0 0 360 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
   <title id="title">Lyra</title>
-  <defs><linearGradient id="g" x1="7" y1="8" x2="76" y2="86" gradientUnits="userSpaceOnUse"><stop stop-color="#A5B4FC"/><stop offset=".52" stop-color="#C084FC"/><stop offset="1" stop-color="#67E8F9"/></linearGradient></defs>
-  <path d="M10 70C21 58 20 40 32 28C44 16 62 16 74 4" stroke="url(#g)" stroke-width="4" stroke-linecap="round"/>
-  <path d="M23 84V49M36 84V40M49 84V31M62 84V22" stroke="url(#g)" stroke-width="3.5" stroke-linecap="round"/>
-  <circle cx="10" cy="70" r="5" fill="#67E8F9"/><circle cx="32" cy="28" r="5" fill="#C084FC"/><circle cx="74" cy="4" r="5" fill="#A5B4FC"/>
-  <text x="104" y="63" fill="#F5F3FF" font-family="Arial, Helvetica, sans-serif" font-size="51" font-weight="700" letter-spacing="8">LYRA</text>
+  <path d="M13 18V57C13 66.389 20.611 74 30 74H43C52.389 74 60 66.389 60 57V18" stroke="#A5B4FC" stroke-width="5" stroke-linecap="round"/>
+  <path d="M25 25V62M36.5 19V65M48 25V62" stroke="#67E8F9" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M13 18C18.5 10 26.167 6 36.5 6C46.833 6 54.5 10 60 18" stroke="#C084FC" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="36.5" cy="19" r="4" fill="#F5F3FF"/>
+  <text x="89" y="62" fill="#F5F3FF" font-family="Arial, Helvetica, sans-serif" font-size="49" font-weight="700" letter-spacing="7">LYRA</text>
 </svg>

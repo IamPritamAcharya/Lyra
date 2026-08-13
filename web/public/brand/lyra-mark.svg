@@ -1,18 +1,8 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Lyra mark</title>
-  <desc id="desc">A constellation-inspired acoustic fingerprint mark</desc>
-  <defs>
-    <linearGradient id="g" x1="18" y1="18" x2="111" y2="111" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#A5B4FC"/>
-      <stop offset=".52" stop-color="#C084FC"/>
-      <stop offset="1" stop-color="#67E8F9"/>
-    </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
-  </defs>
-  <path d="M23 90.5C38 75.4 37 52.6 52.1 37.5C67.2 22.4 90 23.2 105 8" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/>
-  <path d="M23 90.5C38 75.4 37 52.6 52.1 37.5C67.2 22.4 90 23.2 105 8" stroke="#A5B4FC" stroke-opacity=".45" stroke-width="12" stroke-linecap="round" filter="url(#glow)"/>
-  <path d="M40 107V63.5M56 107V52M72 107V40.5M88 107V28" stroke="url(#g)" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="23" cy="90.5" r="7" fill="#67E8F9"/>
-  <circle cx="52" cy="37.5" r="7" fill="#C084FC"/>
-  <circle cx="105" cy="8" r="7" fill="#A5B4FC"/>
+  <desc id="desc">A minimal acoustic constellation mark</desc>
+  <path d="M23 19V61C23 70.941 31.059 79 41 79H55C64.941 79 73 70.941 73 61V19" stroke="#A5B4FC" stroke-width="6" stroke-linecap="round"/>
+  <path d="M36 27V66M48 20V70M60 27V66" stroke="#67E8F9" stroke-width="4" stroke-linecap="round"/>
+  <path d="M23 19C29.4 9.667 38.333 5 48 5C57.667 5 66.6 9.667 73 19" stroke="#C084FC" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="48" cy="20" r="5" fill="#F5F3FF"/>
 </svg>

@@ -18,7 +18,7 @@ export function App() {
       </nav>
     </header>
     <main id="top" className="page">{view === "identify" ? <Identify /> : <Admin csrf={csrf} setCSRF={setCSRF} />}</main>
-    <footer className="site-footer"><span>Lyra · acoustic landmark identification</span><span>Query recordings are never retained.</span></footer>
+    <footer className="site-footer"><span>Lyra · acoustic landmark identification</span><span>Developed by Pritam · Query recordings are never retained.</span></footer>
   </div>;
 }
 

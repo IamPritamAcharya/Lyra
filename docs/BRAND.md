@@ -6,7 +6,7 @@ Lyra identifies the music hiding in real-world recordings. The brand should feel
 
 ## Identity
 
-The native SVG mark combines a constellation curve with vertical spectral lines. It references the Lyra constellation, a lyre’s strings, and a fingerprint constellation map without relying on a generic microphone or music-note symbol.
+The native SVG mark is a minimal lyre: three spectral strings inside a single curved frame, capped by one small signal point. It references the Lyra constellation, a lyre’s strings, and a fingerprint constellation map without relying on a generic microphone or music-note symbol.
 
 Use [`web/public/brand/lyra-mark.svg`](../web/public/brand/lyra-mark.svg) where space is constrained and [`web/public/brand/lyra-lockup.svg`](../web/public/brand/lyra-lockup.svg) for repository and product headings. Keep clear space around the mark equal to its smallest node; do not recolor, stretch, or add effects beyond the supplied artwork.
 
@@ -26,3 +26,7 @@ Use [`web/public/brand/lyra-mark.svg`](../web/public/brand/lyra-mark.svg) where 
 ## Tone
 
 Use direct, clear language: “Track is ready”, “No confident match”, “Reference audio accepted”. Avoid exaggerated AI claims, unverifiable performance promises, and noisy decorative copy.
+
+## Performance rule
+
+The browser interface must remain lightweight. Use native SVG and CSS tokens; avoid large raster assets, repeated backdrop filters, permanent blur effects, and required third-party font requests. Brand polish must not make local development or identification workflows feel slow.
