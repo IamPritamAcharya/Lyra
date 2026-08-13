@@ -22,12 +22,12 @@ type FingerprintIndex interface {
 	Lookup(context.Context, int16, []uint32) ([]Posting, error)
 }
 type Config struct {
-	Version                                                           int16
-	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors int
+	Version                                                                                                        int16
+	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors, MaxFingerprints, MaxPostings, MaxCandidates int
 }
 
 func DefaultConfig() Config {
-	return Config{Version: fingerprint.AlgorithmLandmarkV1, AlignmentTolerance: 2, MinAlignedHits: 6, MinDistinctHashes: 3, MinAnchors: 3}
+	return Config{Version: fingerprint.AlgorithmLandmarkV1, AlignmentTolerance: 2, MinAlignedHits: 6, MinDistinctHashes: 3, MinAnchors: 3, MaxFingerprints: 5000, MaxPostings: 50000, MaxCandidates: 1000}
 }
 
 type Candidate struct {
@@ -52,6 +52,9 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 	if len(query) == 0 {
 		return Result{}, fingerprint.ErrInsufficientSignal
 	}
+	if s.cfg.MaxFingerprints > 0 && len(query) > s.cfg.MaxFingerprints {
+		return Result{}, ErrNoMatch
+	}
 	anchors := map[uint32]map[int]struct{}{}
 	for _, fp := range query {
 		if anchors[fp.Hash] == nil {
@@ -63,15 +66,24 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 	for h := range anchors {
 		hashes = append(hashes, h)
 	}
+	sort.Slice(hashes, func(i, j int) bool { return hashes[i] < hashes[j] })
 	postings, err := s.index.Lookup(ctx, s.cfg.Version, hashes)
 	if err != nil {
 		return Result{}, err
 	}
 	states := map[int64]*state{}
+	postingsSeen := 0
 	for _, p := range postings {
+		postingsSeen++
+		if s.cfg.MaxPostings > 0 && postingsSeen > s.cfg.MaxPostings {
+			break
+		}
 		for frame := range anchors[p.Hash] {
 			st := states[p.TrackID]
 			if st == nil {
+				if s.cfg.MaxCandidates > 0 && len(states) >= s.cfg.MaxCandidates {
+					continue
+				}
 				st = &state{offsets: map[int]int{}, hashes: map[uint32]struct{}{}, anchors: map[int]struct{}{}}
 				states[p.TrackID] = st
 			}
@@ -122,7 +134,10 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		if a.AlignmentSpanFrames != b.AlignmentSpanFrames {
 			return a.AlignmentSpanFrames > b.AlignmentSpanFrames
 		}
-		return a.AlignmentCoherence > b.AlignmentCoherence
+		if a.AlignmentCoherence != b.AlignmentCoherence {
+			return a.AlignmentCoherence > b.AlignmentCoherence
+		}
+		return a.TrackID < b.TrackID
 	})
 	result := Result{Candidates: out}
 	if len(out) == 0 {

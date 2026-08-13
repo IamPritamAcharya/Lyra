@@ -18,8 +18,7 @@ Includes phases 0–11 from the bootstrap specification: DSP spike; production f
 - [completed] Phase 5: matcher
 - [completed] Phase 6: identification API
 - [in progress] Phase 7: evaluation
-- [pending] Phase 7: evaluation
-- [pending] Phase 8: scalability hardening
+- [in progress] Phase 8: scalability hardening
 - [pending] Phase 9: production hardening
 - [pending] Phase 10: deployment
 - [pending] Phase 11: release verification
@@ -69,3 +68,5 @@ Phase 2 completed: migrations ran successfully against Compose PostgreSQL and th
 Phase 3 completed with safe no-shell FFmpeg/ffprobe execution, input validation, canonical PCM conversion, and Gonum Fourier. Phase 5 completed with a consumer-owned index contract, one batched hash lookup, offset-neighbourhood voting, deterministic ranking, and conservative seed rejection floors. Phase 4 ingestion remains required before release.
 
 Reference upload endpoint wiring is now present: create track, post multipart reference audio, persist private object and metadata, then enqueue the indexing worker. A full local run awaits MinIO/Valkey image availability in this environment.
+
+Phase 8 began with bounded matcher work: maximum query fingerprints, postings, and candidates are enforced, and the query hash set is sorted for deterministic lookups. A reproducible synthetic benchmark exists. On 2026-08-13, 1,000 synthetic tracks / 4,200 postings / 200 query fingerprints completed in 2 ms in memory and returned a match. This is not a PostgreSQL or audio-accuracy claim.

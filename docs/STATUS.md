@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 7 — evaluation framework (in progress).
+Current phase: Phase 8 — scalability hardening (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -18,14 +18,15 @@ Completed:
 - Deterministic matcher with one batched inverted-index lookup, ±2-frame offset voting, ranking, and no-match/insufficient-signal decisions implemented and unit-tested.
 - Phase 4 worker execution mode and Phase 5 matcher are implemented; Phase 6 multipart identify handler is wired to the matcher.
 - Phase 6 completed with ephemeral multipart handling, public metadata responses, request IDs, request limits, and per-process identify rate limiting.
+- Synthetic matcher benchmark command implemented. Initial in-memory 1,000-track baseline completed; see `docs/BENCHMARKS.md`.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- A local full-workflow smoke test is pending MinIO/Valkey image download completion; evaluation corpus and metrics instrumentation remain unimplemented.
+- Docker socket access is unavailable to this coding session, so the local full-workflow smoke test cannot be rerun here. Evaluation corpus and metrics instrumentation remain unimplemented.
 
 Next:
-- Run full local workflow: create track, upload reference, worker READY, identify a clip; then implement evaluation corpus generation.
+- Add PostgreSQL posting safeguards/hash statistics and Prometheus metrics; generate and run the legal evaluation corpus when local dependencies are available.
 
 Last verification:
 - `go test ./...`
@@ -33,3 +34,4 @@ Last verification:
 - `go build ./cmd/lyra`
 - local `GET /health/ready` smoke test
 - `DATABASE_URL=... go test -tags=integration ./...` against local Compose PostgreSQL
+- `./lyra benchmark --synthetic-tracks=1000` → 2 ms, 200 query fingerprints, 4,200 in-memory synthetic postings; matched=true.

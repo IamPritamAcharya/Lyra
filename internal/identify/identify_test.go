@@ -42,3 +42,22 @@ func TestNoMatchAndInsufficient(t *testing.T) {
 		t.Fatalf("%+v %v", r, err)
 	}
 }
+
+func TestSafeguardsBoundWork(t *testing.T) {
+	query := []fingerprint.Fingerprint{{Hash: 1, AnchorFrame: 1}, {Hash: 2, AnchorFrame: 2}}
+	idx := &fakeIndex{postings: []Posting{{Hash: 1, TrackID: 1, AnchorFrame: 10}, {Hash: 2, TrackID: 2, AnchorFrame: 10}}}
+	cfg := DefaultConfig()
+	cfg.MaxFingerprints = 1
+	if _, err := New(idx, cfg).Match(context.Background(), query); err != ErrNoMatch {
+		t.Fatalf("err=%v", err)
+	}
+	cfg = DefaultConfig()
+	cfg.MinAlignedHits = 1
+	cfg.MinDistinctHashes = 1
+	cfg.MinAnchors = 1
+	cfg.MaxCandidates = 1
+	r, err := New(idx, cfg).Match(context.Background(), query)
+	if err != nil || len(r.Candidates) != 1 {
+		t.Fatalf("%+v %v", r, err)
+	}
+}

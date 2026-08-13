@@ -8,9 +8,11 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/lyra/lyra/internal/app"
+	"github.com/lyra/lyra/internal/benchmark"
 	"github.com/lyra/lyra/internal/config"
 	"github.com/lyra/lyra/internal/fingerprint"
 	lyrapostgres "github.com/lyra/lyra/internal/persistence/postgres"
@@ -21,6 +23,25 @@ func main() {
 		usage()
 	}
 	switch os.Args[1] {
+	case "benchmark":
+		if len(os.Args) != 3 {
+			usage()
+		}
+		const prefix = "--synthetic-tracks="
+		if len(os.Args[2]) <= len(prefix) || os.Args[2][:len(prefix)] != prefix {
+			usage()
+		}
+		tracks, err := strconv.Atoi(os.Args[2][len(prefix):])
+		if err != nil {
+			fail(err)
+		}
+		report, err := benchmark.Run(context.Background(), tracks)
+		if err != nil {
+			fail(err)
+		}
+		if err := json.NewEncoder(os.Stdout).Encode(report); err != nil {
+			fail(err)
+		}
 	case "eval":
 		if len(os.Args) != 4 || os.Args[2] != "--manifest" {
 			usage()
@@ -91,7 +112,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: lyra serve | worker | migrate | eval --manifest <path> | fingerprint <canonical-11025Hz-mono-pcm16.wav>")
+	fmt.Fprintln(os.Stderr, "usage: lyra serve | worker | migrate | eval --manifest <path> | benchmark --synthetic-tracks=N | fingerprint <canonical-11025Hz-mono-pcm16.wav>")
 	os.Exit(2)
 }
 func fail(err error) { fmt.Fprintln(os.Stderr, "lyra:", err); os.Exit(1) }
