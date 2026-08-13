@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Frontend phase — public identification and protected admin UI (implemented; local browser smoke test pending).
+Current phase: Brand and product-experience phase — native identity system and UI refresh (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -32,11 +32,14 @@ Completed:
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
+Latest brand verification:
+- `web: npm run lint && npm run build` passed after the native SVG identity, responsive UI refresh, and README update on 2026-08-13.
+
 Known issues:
 - Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Run `make dev` to apply migration `000002_admin_sessions` and complete the local browser login/catalog smoke test.
+- Complete the branded UI/browser smoke test and validate the refreshed README rendering on GitHub.
 
 Manual local test data:
 - `testdata/audio/side-to-side.mp3` (237.9 seconds) and `testdata/audio/kalyani.mp3` (287.3 seconds) are full local references.

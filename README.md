@@ -1,80 +1,124 @@
-# Lyra
+<p align="center">
+  <img src="web/public/brand/lyra-lockup.svg" width="300" alt="Lyra" />
+</p>
 
-Lyra is a Go service that identifies short recordings of audio previously indexed as reference material. It uses deterministic acoustic landmarks, an inverted PostgreSQL fingerprint index, and temporal-offset voting—no machine learning.
+<p align="center"><strong>Find the music in the noise.</strong></p>
 
-## Current capabilities
+<p align="center">
+  A self-hostable music-identification backend for short recordings, built with deterministic acoustic landmark fingerprints.
+</p>
 
-- Admin track catalog and private reference-audio upload
-- Asynchronous fingerprint indexing with PostgreSQL, Valkey, and S3-compatible storage
-- Safe FFprobe/FFmpeg canonicalization and deterministic landmark-v1 extraction
-- Multipart `POST /v1/identify` matching, no-match and insufficient-signal handling
-- Admin UI with a single bcrypt-protected, server-side session account
-- Health endpoints, migrations, worker mode, OpenAPI contract, and importable Postman collection
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="docs/DEVELOPMENT.md">Development</a> ·
+  <a href="docs/DEPLOYMENT.md">Deployment</a>
+</p>
 
-See [docs/STATUS.md](docs/STATUS.md) for the precise implementation state and unmeasured limitations.
+---
 
-## Run locally
+Lyra identifies an indexed reference track from a short, real-world recording. It is designed for exact-recording recognition: uploaded snippets, microphone captures, compressed files, and audio extracted from video—not humming, semantic search, or “similar songs.”
 
-Prerequisites: Go 1.22+, Docker/Compose, and FFmpeg.
+The matching path is deterministic and inspectable: FFmpeg canonicalization → spectral landmarks → compact hashes → PostgreSQL inverted-index lookup → temporal-offset voting.
+
+## What is included
+
+- Private reference catalog with browser-admin workflow and server-side sessions
+- Asynchronous reference ingestion with PostgreSQL, Valkey, and S3-compatible storage
+- Deterministic `landmark-v1` fingerprint extraction in Go
+- Synchronous `POST /v1/identify` endpoint with no-match and insufficient-signal behavior
+- React/Vite workspace for identification and catalog administration
+- Structured development logs, Prometheus metrics, health checks, Docker, Compose, migrations, and Postman collection
+
+> Query audio is temporary: Lyra fingerprints it synchronously and removes the uploaded file. Reference audio remains private in object storage.
+
+## Quick start
+
+Prerequisites: Go 1.22+, Docker Compose, FFmpeg, and Node 18+.
 
 ```bash
 cp .env.example .env
-# Set LYRA_ADMIN_PASSWORD_HASH as described in docs/DEVELOPMENT.md.
+
+# Generate an admin password hash, then place it in .env.
+htpasswd -bnBC 12 "" 'choose-a-strong-password' | tr -d ':\n'
+
 cd web && npm install && cd ..
 make dev
 ```
 
-`make dev` starts PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, then starts the Go API, worker, and Vite frontend. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and local Docker infrastructure.
+Open [http://localhost:5173](http://localhost:5173). `make dev` waits for PostgreSQL, Valkey, and MinIO; applies migrations; then starts the API, worker, and frontend. Ctrl-C performs a graceful successful shutdown of all local processes and containers. PostgreSQL and MinIO data persist in named Docker volumes.
 
-An intentional `Ctrl-C` is a successful shutdown and exits `make dev` without an error. Local builds are written to ignored `bin/lyra`; the project root stays free of generated binaries.
+For local development only, the current ignored `.env` uses `admin` / `change-me`. Replace it before exposing the service anywhere.
 
-Local PostgreSQL and MinIO use named Docker volumes, so `make infra-down` does not erase tracks or uploaded reference audio. Removing the Docker volumes is a deliberate destructive reset.
+## How it works
 
-## Logging
-
-Local development defaults to colorized structured text logs. Set `LYRA_LOG_LEVEL` to `debug`, `info`, `warn`, or `error`; set `LYRA_LOG_FORMAT=json` for production log collection. Logs include request IDs, lifecycle events, indexing/fingerprint counts, and safe matching statistics. Passwords, secrets, cookies, CSRF values, session tokens, and query audio are never logged.
-
-Verify readiness:
-
-```bash
-curl http://localhost:8080/health/ready
+```text
+Reference audio                         Query recording
+      │                                       │
+FFmpeg → landmark-v1 → PostgreSQL       FFmpeg → landmark-v1
+      │                                       │
+private object storage                  batched hash lookup
+                                              │
+                                      temporal-offset voting
+                                              │
+                                  match / no match / insufficient signal
 ```
 
-## Test end-to-end with Postman
+Each landmark is paired with a future peak and encoded into a compact 20-bit fingerprint hash. A genuine match produces many hashes that agree on approximately the same reference-time offset; random collisions do not. Read the frozen algorithm contract in [docs/ALGORITHM.md](docs/ALGORITHM.md).
 
-Import [postman/Lyra.postman_collection.json](postman/Lyra.postman_collection.json) and [postman/Lyra.local.postman_environment.json](postman/Lyra.local.postman_environment.json). Select **Lyra Local**, then run:
+## Architecture
 
-1. `Health / Ready`
-2. `Admin tracks / Create track (stores track_id)`
-3. `Admin tracks / Upload reference audio (queues indexing)`
-4. `Admin tracks / Get track / polling status` until `Status` is `READY`
-5. `Identification / Identify indexed query clip`
+Lyra is a modular monolith: one Go module, one binary, and separate execution modes where appropriate.
 
-Run `Admin auth / Login` first; it stores the CSRF token, while Postman retains the HttpOnly session cookie. The collection setup and audio path variables are described in [postman/README.md](postman/README.md).
+| Concern | Technology |
+| --- | --- |
+| API / application | Go, `net/http`, `chi`-compatible design, `slog` |
+| Catalog and fingerprint index | PostgreSQL, pgx, explicit SQL/migrations |
+| Background jobs | Asynq + Redis-compatible Valkey |
+| Reference audio | Private S3-compatible object storage (MinIO locally) |
+| Audio / DSP | FFmpeg, ffprobe, Gonum Fourier, Go |
+| Browser UI | React, TypeScript, Vite |
+
+PostgreSQL is the source of truth. Valkey is used for jobs and rate limiting, never as the fingerprint database. More detail: [Architecture](docs/ARCHITECTURE.md), [Deployment](docs/DEPLOYMENT.md), and [Brand system](docs/BRAND.md).
 
 ## Commands
 
 ```bash
-make build
-make test
-make test-race
-make vet
-make verify
-make infra-up
-make infra-down
-make dev
-make db-migrate
+make dev            # Full local stack: infra, migration, API, worker, Vite
+make build          # Builds ignored bin/lyra
+make test           # Go tests
+make test-race      # Race detector
+make lint           # golangci-lint
+make verify         # Formatting, vet, tests
+make db-migrate     # Apply database migrations
+make benchmark      # Synthetic matcher benchmark
+make infra-down     # Stop local containers (data is preserved)
 ```
 
-The binary supports `serve`, `worker`, `migrate`, `fingerprint`, and `eval` modes.
+The application binary supports `serve`, `worker`, `migrate`, `fingerprint`, `eval`, and `benchmark`. Use Make targets for local build artifacts; a bare `go build ./cmd/lyra` creates an unwanted root binary.
 
-## Deployment
+## Test the workflow
 
-Use the same image for the API (`lyra serve`) and worker (`lyra worker`). The required environment variables, migration sequence, backup guidance, and Render blueprint are documented in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+1. Sign in through **Catalog**.
+2. Create a reference track and upload the complete source recording.
+3. Refresh until its status is `READY`.
+4. Use **Identify** to submit a short excerpt from that exact source.
 
-## Frontend
+For an API-first test, import [Lyra.postman_collection.json](postman/Lyra.postman_collection.json) and [Lyra.local.postman_environment.json](postman/Lyra.local.postman_environment.json). Run **Admin auth / Login** before catalog writes.
 
-The static React/Vite UI under [`web/`](web/) includes public identification and the single admin catalog workflow. Run `cd web && npm install && npm run dev`; see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#frontend).
+## Status and scope
+
+`landmark-v1` has working indexing and exact-source matching but has not yet been evaluated against a legal robustness corpus. Lyra does not claim commercial-scale capacity, universal cross-master matching, or measured accuracy yet. See [docs/STATUS.md](docs/STATUS.md) for verified state, known limitations, and next work.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Algorithm](docs/ALGORITHM.md)
+- [Local development](docs/DEVELOPMENT.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Benchmarks](docs/BENCHMARKS.md)
+- [API contract](api/openapi.yaml)
 
 ## License
 
