@@ -1,5 +1,18 @@
 # Development and operations
 
+## Frontend
+
+The public browser interface lives in `web/`. Its Node dependencies use Vite 5 for compatibility with Node 18; use Node 20.19+ before upgrading to newer Vite versions.
+
+```bash
+cd web
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Start the Go API separately and set `LYRA_ALLOWED_ORIGIN=http://localhost:5173`. The frontend’s `VITE_LYRA_API_BASE_URL` must point to that API. Do not put `LYRA_ADMIN_API_KEY` in `web/.env` or browser code.
+
 ## Backups
 
 PostgreSQL stores Lyra's catalog and fingerprint source of truth. Create a custom-format backup with:

@@ -80,3 +80,5 @@ Phase 9 adds panic recovery, restrictive HTTP security headers, and `scripts/bac
 Phase 10 adds `render.yaml`, `docs/DEPLOYMENT.md`, and a real `make docker-build` target. Docker execution has not been verified in this session because the Docker socket is inaccessible to the execution sandbox.
 
 Release preflight ran on 2026-08-13: race tests, vet, and golangci-lint passed. `govulncheck` could not retrieve `vuln.go.dev` due session network restrictions; Docker checks remain blocked by Docker socket access.
+
+The user authorized a new frontend phase after the backend work. `web/` is a static React/TypeScript/Vite identification UI. ADR-001 records that Go remains the only backend and that admin credentials must never enter browser code. The public UI build passed with Node 18/Vite 5.

@@ -37,7 +37,7 @@ func New(cfg config.Config, log *slog.Logger, repo catalog.Repository, ready fun
 	admin.HandleFunc("DELETE /v1/admin/tracks/{id}", deleteTrack(repo))
 	admin.HandleFunc("POST /v1/admin/tracks/{id}/audio", uploadTrackAudio(uploader, cfg.Security.MaxIdentifyBytes))
 	mux.Handle("/v1/admin/", requireAdmin(cfg.Security.AdminAPIKey, admin))
-	return recoverPanic(log, secureHeaders(requestLog(log, metrics, mux)))
+	return recoverPanic(log, secureHeaders(cors(cfg.HTTP.AllowedOrigin, requestLog(log, metrics, mux))))
 }
 
 func createTrack(repo catalog.Repository) http.HandlerFunc {

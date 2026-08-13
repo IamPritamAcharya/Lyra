@@ -1,6 +1,6 @@
 # Lyra Status
 
-Current phase: Phase 10 — deployment (in progress).
+Current phase: Frontend phase — public identification UI (in progress).
 
 Completed:
 - Persistent project context and repository skeleton created.
@@ -24,15 +24,16 @@ Completed:
 - Serving now fails fast when PostgreSQL, object storage, or required security configuration is absent instead of exposing an in-memory fallback.
 - Panic recovery, restrictive security headers, and PostgreSQL backup/restore guidance are implemented.
 - Render web/worker blueprint, deployment environment documentation, and functional `make docker-build` target are implemented.
+- Static React/TypeScript/Vite public identification frontend is scaffolded and production-build verified.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
 Known issues:
-- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck` is blocked here because it cannot fetch the vulnerability database. A legal evaluation corpus remains unimplemented.
+- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Run `make docker-build` and full local smoke test where Docker access is available; add tracing/dependency failure tests and a legal evaluation corpus.
+- Run the frontend against a locally running API, then add a protected admin browser workflow only after browser authentication is designed.
 
 Last verification:
 - `go test ./...`

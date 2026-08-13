@@ -1,0 +1,18 @@
+:root { color: #eef2ff; background: #090b12; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+.page { width: min(100% - 2rem, 680px); margin: 0 auto; padding: 5rem 0; }
+h1 { font-size: clamp(2.4rem, 7vw, 4.8rem); line-height: .98; letter-spacing: -.06em; margin: .5rem 0 1rem; }
+h2 { margin: .3rem 0; font-size: 1.7rem; }
+.eyebrow { color: #a5b4fc; font-size: .75rem; font-weight: 800; letter-spacing: .14em; margin: 0; }
+.intro, .privacy { color: #aeb7ca; line-height: 1.6; max-width: 56ch; }
+.card { background: #141827; border: 1px solid #282e43; border-radius: 1rem; margin-top: 2rem; padding: 1.25rem; }
+.upload { display: grid; gap: .7rem; font-weight: 700; }
+.upload small, .result small { color: #9aa5bd; font-weight: 400; }
+input { color: #cbd5e1; }
+button { background: #a5b4fc; border: 0; border-radius: .65rem; color: #11152a; cursor: pointer; font-weight: 800; margin-top: 1.25rem; padding: .85rem 1.1rem; }
+button:disabled { cursor: wait; opacity: .55; }
+.result { border-color: #4855a9; }
+.error { color: #fda4af; }
+.privacy { font-size: .85rem; margin-top: 2rem; }

@@ -68,6 +68,10 @@ The binary supports `serve`, `worker`, `migrate`, `fingerprint`, and `eval` mode
 
 Use the same image for the API (`lyra serve`) and worker (`lyra worker`). The required environment variables, migration sequence, backup guidance, and Render blueprint are documented in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
+## Frontend
+
+The public identification UI is a separate static React/Vite app under [`web/`](web/). Run `cd web && npm install && npm run dev`; see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#frontend). It intentionally does not expose admin features or the admin API key.
+
 ## License
 
 License selection is pending.

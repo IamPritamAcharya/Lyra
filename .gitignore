@@ -2,6 +2,9 @@
 /lyra
 coverage.out
 .cache/
+web/node_modules/
+web/dist/
+web/.env
 tmp/
 data/
 postman/*.local.json
