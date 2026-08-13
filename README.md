@@ -19,18 +19,12 @@ Prerequisites: Go 1.22+, Docker/Compose, and FFmpeg.
 
 ```bash
 cp .env.example .env
-make infra-up
-
-set -a && source .env && set +a
-make db-migrate
+# Set LYRA_ADMIN_PASSWORD_HASH as described in docs/DEVELOPMENT.md.
+cd web && npm install && cd ..
+make dev
 ```
 
-In separate terminals, after exporting the same `.env` values:
-
-```bash
-go run ./cmd/lyra serve
-go run ./cmd/lyra worker
-```
+`make dev` starts PostgreSQL, Valkey, MinIO, runs migrations, then starts the Go API, worker, and Vite frontend. Stop all application processes with `Ctrl-C`; use `make infra-down` to stop the infrastructure too.
 
 Verify readiness:
 
@@ -60,6 +54,7 @@ make vet
 make verify
 make infra-up
 make infra-down
+make dev
 make db-migrate
 ```
 

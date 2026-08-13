@@ -34,7 +34,7 @@ Known issues:
 - Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Apply migration `000002_admin_sessions`, configure a real bcrypt admin password hash, and run a local browser login/catalog smoke test.
+- Run `make dev` to apply migration `000002_admin_sessions` and complete the local browser login/catalog smoke test.
 
 Last verification:
 - `go test ./...`

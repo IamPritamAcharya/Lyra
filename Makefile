@@ -1,4 +1,5 @@
 .DEFAULT_GOAL := build
+SHELL := /bin/bash
 
 CACHE_DIR ?= $(CURDIR)/.cache
 export GOCACHE := $(CACHE_DIR)/go-build
@@ -8,7 +9,7 @@ build:
 	go build ./cmd/lyra
 
 run: build
-	./lyra serve --with-worker
+	./lyra serve
 
 fmt:
 	gofmt -w $$(find . -name '*.go' -not -path './vendor/*')
@@ -39,8 +40,18 @@ infra-up:
 infra-down:
 	docker compose down
 
-dev:
-	docker compose up --build
+dev: infra-up
+	@test -f .env || { echo "missing .env; copy .env.example first" >&2; exit 1; }
+	@test -d web/node_modules || { echo "missing web dependencies; run: cd web && npm install" >&2; exit 1; }
+	@set -euo pipefail; \
+	set -a; source ./.env; set +a; \
+	go run ./cmd/lyra migrate; \
+	go run ./cmd/lyra serve & api_pid=$$!; \
+	go run ./cmd/lyra worker & worker_pid=$$!; \
+	(cd web && npm run dev -- --host 127.0.0.1) & web_pid=$$!; \
+	cleanup() { kill $$api_pid $$worker_pid $$web_pid 2>/dev/null || true; wait $$api_pid $$worker_pid $$web_pid 2>/dev/null || true; }; \
+	trap cleanup EXIT INT TERM; \
+	wait -n $$api_pid $$worker_pid $$web_pid
 
 db-migrate: build
 	./lyra migrate

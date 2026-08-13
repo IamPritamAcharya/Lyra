@@ -8,10 +8,11 @@ The public browser interface lives in `web/`. Its Node dependencies use Vite 5 f
 cd web
 cp .env.example .env
 npm install
-npm run dev
+cd ..
+make dev
 ```
 
-Start the Go API separately and set `LYRA_ALLOWED_ORIGIN=http://localhost:5173`. The frontend’s `VITE_LYRA_API_BASE_URL` must point to that API.
+`make dev` starts local PostgreSQL, Valkey, MinIO, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Stop the application processes with `Ctrl-C`; run `make infra-down` when you also want to stop the infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
 
 The browser admin is a single configured account. Generate its bcrypt password hash once, put only that hash in `.env`, and keep the plain-text password out of the repository:
 
