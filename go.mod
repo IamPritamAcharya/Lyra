@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go/v7 v7.0.87
+	golang.org/x/crypto v0.33.0
 	golang.org/x/time v0.8.0
 	gonum.org/v1/gonum v0.15.1
 )
@@ -33,7 +34,6 @@ require (
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
