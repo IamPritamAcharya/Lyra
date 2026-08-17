@@ -1,4 +1,6 @@
-const apiBaseURL = import.meta.env.VITE_LYRA_API_BASE_URL ?? "http://localhost:8080";
+const apiBaseURL = window.location.hostname === "localhost"
+  ? "http://localhost:8080"
+  : import.meta.env.VITE_LYRA_API_BASE_URL ?? "http://localhost:8080";
 
 export type IdentifyResponse = {
   request_id: string;
@@ -35,10 +37,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function identify(file: File): Promise<IdentifyResponse> {
+export async function identify(file: File, liveCaptureMilliseconds?: number): Promise<IdentifyResponse> {
   const form = new FormData();
   form.append("audio", file);
-  return request<IdentifyResponse>("/v1/identify", { method: "POST", body: form });
+  const headers = liveCaptureMilliseconds === undefined ? undefined : { "X-Lyra-Live-Capture-Ms": String(Math.round(liveCaptureMilliseconds)) };
+  return request<IdentifyResponse>("/v1/identify", { method: "POST", body: form, headers });
 }
 
 export function login(username: string, password: string): Promise<AdminSession> {

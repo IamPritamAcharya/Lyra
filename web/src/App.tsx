@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTrack, deleteTrack, identify, listTracks, login, logout, uploadTrackAudio, type IdentifyResponse, type Track } from "./api";
 
 type View = "identify" | "admin";
+
+type LiveCapture = { context: AudioContext; source: MediaStreamAudioSourceNode; processor: ScriptProcessorNode };
 
 export function App() {
   const [view, setView] = useState<View>("identify");
@@ -24,7 +26,156 @@ export function App() {
 
 function Identify() {
   const [file, setFile] = useState<File | null>(null);
-  const mutation = useMutation({ mutationFn: identify });
+  const [isListening, setIsListening] = useState(false);
+  const [listenSeconds, setListenSeconds] = useState(0);
+  const [isCheckingLive, setIsCheckingLive] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [liveResult, setLiveResult] = useState<IdentifyResponse | null>(null);
+  const [liveSearchExhausted, setLiveSearchExhausted] = useState(false);
+  const mutation = useMutation({ mutationFn: (queryFile: File) => identify(queryFile) });
+  const liveCapture = useRef<LiveCapture | null>(null);
+  const finishListening = useRef<(() => void) | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const stopTimer = useRef<number | null>(null);
+  const elapsedTimer = useRef<number | null>(null);
+  const firstCheckTimer = useRef<number | null>(null);
+  const checkTimer = useRef<number | null>(null);
+  const liveCheck = useRef<Promise<void> | null>(null);
+  const listeningRun = useRef(0);
+  const matchFound = useRef(false);
+  const reachedListenLimit = useRef(false);
+  const maximumListenSeconds = 15;
+  const firstCheckMilliseconds = 5_000;
+  const checkIntervalMilliseconds = 3_000;
+
+  const clearListeningTimers = () => {
+    if (stopTimer.current !== null) window.clearTimeout(stopTimer.current);
+    if (elapsedTimer.current !== null) window.clearInterval(elapsedTimer.current);
+    if (firstCheckTimer.current !== null) window.clearTimeout(firstCheckTimer.current);
+    if (checkTimer.current !== null) window.clearInterval(checkTimer.current);
+    stopTimer.current = null;
+    elapsedTimer.current = null;
+    firstCheckTimer.current = null;
+    checkTimer.current = null;
+  };
+  const stopMicrophone = () => {
+    stream.current?.getTracks().forEach((track) => track.stop());
+    stream.current = null;
+  };
+  const stopListening = () => {
+    finishListening.current?.();
+  };
+  const checkCapture = async (samples: Float32Array[], sampleRate: number, run: number, finalCheck: boolean, captureMilliseconds: number) => {
+    if (liveCheck.current) {
+      if (finalCheck) await liveCheck.current;
+      else return;
+    }
+    if (run !== listeningRun.current || matchFound.current) return;
+    const audio = encodeWAV(samples, sampleRate);
+    if (audio.size === 0) return;
+    const request = (async () => {
+      setIsCheckingLive(true);
+      try {
+        const response = await identify(new File([audio], "lyra-live-query.wav", { type: audio.type }), captureMilliseconds);
+        if (run !== listeningRun.current) return;
+        if (response.matched) {
+          matchFound.current = true;
+          setLiveResult(response);
+          clearListeningTimers();
+          stopListening();
+        } else if (finalCheck) {
+          setLiveResult(response);
+          setLiveSearchExhausted(reachedListenLimit.current);
+        }
+      } catch {
+        if (run === listeningRun.current && finalCheck) setLiveError("Could not check the live recording. Try again or upload an audio file.");
+      } finally {
+        if (run === listeningRun.current) setIsCheckingLive(false);
+      }
+    })();
+    liveCheck.current = request;
+    await request;
+    if (liveCheck.current === request) liveCheck.current = null;
+  };
+  const startListening = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || !window.AudioContext) {
+      setLiveError("Live listening is not supported by this browser. Upload an audio file instead.");
+      return;
+    }
+    setLiveError(null);
+    mutation.reset();
+    setLiveResult(null);
+    setLiveSearchExhausted(false);
+    listeningRun.current += 1;
+    const run = listeningRun.current;
+    matchFound.current = false;
+    reachedListenLimit.current = false;
+    try {
+      const microphone = await navigator.mediaDevices.getUserMedia({ audio: { autoGainControl: false, echoCancellation: false, noiseSuppression: false } });
+      stream.current = microphone;
+      const context = new AudioContext();
+      const source = context.createMediaStreamSource(microphone);
+      const processor = context.createScriptProcessor(4096, 1, 1);
+      const samples: Float32Array[] = [];
+      processor.onaudioprocess = (event) => samples.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      source.connect(processor);
+      processor.connect(context.destination);
+      liveCapture.current = { context, source, processor };
+      await context.resume();
+      const startedAt = Date.now();
+      const finish = () => {
+        if (run !== listeningRun.current || finishListening.current !== finish) return;
+        clearListeningTimers();
+        finishListening.current = null;
+        liveCapture.current?.source.disconnect();
+        liveCapture.current?.processor.disconnect();
+        void liveCapture.current?.context.close();
+        liveCapture.current = null;
+        stopMicrophone();
+        setIsListening(false);
+        if (samples.length === 0) {
+          setLiveError("No usable audio was captured. Try again with music playing nearby.");
+          return;
+        }
+        if (!matchFound.current) void checkCapture(samples, context.sampleRate, run, true, Math.min(maximumListenSeconds * 1_000, Date.now() - startedAt));
+      };
+      finishListening.current = finish;
+      setListenSeconds(0);
+      setIsListening(true);
+      elapsedTimer.current = window.setInterval(() => setListenSeconds(Math.min(maximumListenSeconds, Math.floor((Date.now() - startedAt) / 1000))), 250);
+      firstCheckTimer.current = window.setTimeout(() => {
+        if (run !== listeningRun.current || finishListening.current !== finish) return;
+        void checkCapture(samples, context.sampleRate, run, false, firstCheckMilliseconds);
+        checkTimer.current = window.setInterval(() => {
+          // Reserve the final second for the definitive 15-second check. The
+          // public identify limiter needs two seconds between requests.
+          if (Date.now() - startedAt > maximumListenSeconds * 1_000 - checkIntervalMilliseconds) return;
+          void checkCapture(samples, context.sampleRate, run, false, Date.now() - startedAt);
+        }, checkIntervalMilliseconds);
+      }, firstCheckMilliseconds);
+      stopTimer.current = window.setTimeout(() => {
+        reachedListenLimit.current = true;
+        stopListening();
+      }, maximumListenSeconds * 1000);
+    } catch {
+      liveCapture.current?.source.disconnect();
+      liveCapture.current?.processor.disconnect();
+      void liveCapture.current?.context.close();
+      liveCapture.current = null;
+      stopMicrophone();
+      setLiveError("Could not access the microphone. Allow microphone access, then try again.");
+    }
+  };
+  useEffect(() => () => {
+    listeningRun.current += 1;
+    clearListeningTimers();
+    finishListening.current = null;
+    liveCapture.current?.source.disconnect();
+    liveCapture.current?.processor.disconnect();
+    void liveCapture.current?.context.close();
+    liveCapture.current = null;
+    stopMicrophone();
+  }, []);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (file) mutation.mutate(file); };
   return <>
     <section className="hero" aria-labelledby="identify-title">
@@ -33,13 +184,17 @@ function Identify() {
     </section>
     <form className="identify-card" onSubmit={submit}>
       <label className={file ? "drop-zone has-file" : "drop-zone"}>
-        <input accept="audio/*" type="file" onChange={(event) => { setFile(event.target.files?.[0] ?? null); mutation.reset(); }} />
+        <input accept="audio/*" type="file" disabled={isListening || mutation.isPending} onChange={(event) => { setFile(event.target.files?.[0] ?? null); setLiveError(null); mutation.reset(); }} />
         <span className="drop-icon">⌁</span><span className="drop-title">{file ? file.name : "Choose an audio recording"}</span><span className="drop-copy">{file ? `${formatBytes(file.size)} · ready to identify` : "MP3, WAV, AAC and other FFmpeg-supported audio"}</span>
       </label>
-      <div className="identify-actions"><p><strong>Best results:</strong> a clear 5–10 second excerpt from an indexed reference.</p><button className="button button-primary" disabled={!file || mutation.isPending} type="submit">{mutation.isPending ? <><Spinner /> Reading landmarks…</> : <>Identify recording <Arrow /></>}</button></div>
+      <div className="identify-actions"><p><strong>Best results:</strong> a clear 5–10 second excerpt from an indexed reference.</p><div className="identify-buttons" style={{ display: "grid", gap: ".65rem" }}><button className="button button-primary" disabled={!file || mutation.isPending || isListening || isCheckingLive} type="submit">{mutation.isPending ? <><Spinner /> Reading landmarks…</> : <>Identify recording <Arrow /></>}</button><button className={isListening ? "button button-quiet" : "button button-aqua"} disabled={mutation.isPending || (!isListening && isCheckingLive)} onClick={isListening ? stopListening : () => { void startListening(); }} type="button">{isListening ? <><Spinner /> Listening {listenSeconds}s / {maximumListenSeconds}s · Stop</> : <>Listen live <span aria-hidden="true">◉</span></>}</button></div></div>
     </form>
+    {isListening && <p className="live-note" role="status">Listening from your microphone. Lyra checks the growing capture and stops as soon as it finds a match; otherwise it keeps listening for up to 15 seconds.</p>}
+    {!isListening && isCheckingLive && <p className="live-note" role="status">Checking the final live capture…</p>}
+    {liveError && <Notice kind="error" title="Live listening unavailable">{liveError}</Notice>}
     {mutation.isError && <Notice kind="error" title="Could not process that recording">Try another supported audio file under 10 MB.</Notice>}
     {mutation.data && <Result response={mutation.data} />}
+    {liveResult && <Result response={liveResult} searchExhausted={liveSearchExhausted} />}
     <section className="trust-row" aria-label="Lyra principles"><TrustItem icon="◈" title="Private by default" text="Query audio is processed temporarily, then removed." /><TrustItem icon="⌁" title="Deterministic" text="Acoustic landmarks, not opaque model guesses." /><TrustItem icon="↗" title="Built for excerpts" text="Designed for short recordings of indexed audio." /></section>
   </>;
 }
@@ -71,9 +226,9 @@ function Catalog({ csrf, signOut }: { csrf: string; signOut: () => void }) {
   </section>;
 }
 
-function Result({ response }: { response: IdentifyResponse }) {
+function Result({ response, searchExhausted = false }: { response: IdentifyResponse; searchExhausted?: boolean }) {
   if (response.reason === "insufficient_audio_signal") return <Notice kind="warning" title="Not enough usable signal">Try a clearer recording with more music and less silence.</Notice>;
-  if (!response.matched || !response.match) return <section className="result-card no-match"><span className="result-icon">⌁</span><div><p className="kicker"><i /> NO CONFIDENT MATCH</p><h2>Nothing matched this recording.</h2><p>Lyra only identifies audio that has been added to your private reference catalog.</p><small>Processed in {response.processing_ms} ms</small></div></section>;
+  if (!response.matched || !response.match) return <section className="result-card no-match"><span className="result-icon">⌁</span><div><p className="kicker"><i /> NO CONFIDENT MATCH</p><h2>{searchExhausted ? "No match after 15 seconds." : "Nothing matched this recording."}</h2><p>Lyra only identifies audio that has been added to your private reference catalog.</p><small>Processed in {response.processing_ms} ms</small></div></section>;
   const { match } = response;
   return <section className="result-card matched"><span className="result-icon">✓</span><div><p className="kicker"><i /> MATCH FOUND</p><h2>{match.title}</h2><p>{match.artist}{match.album ? ` · ${match.album}` : ""}</p><small>Reference offset {formatTime(match.reference_offset_ms)} · processed in {response.processing_ms} ms</small></div><div className="match-evidence"><span>Evidence</span><strong>{match.match_strength === "timing_aligned" ? "Timing aligned" : "Match found"}</strong></div></section>;
 }
@@ -84,6 +239,18 @@ function TrustItem({ icon, title, text }: { icon: string; title: string; text: s
 function Stat({ value, label }: { value: string | number; label: string }) { return <div><strong>{value}</strong><span>{label}</span></div>; }
 function Spinner() { return <i className="spinner" aria-hidden="true" />; }
 function Arrow() { return <span aria-hidden="true">→</span>; }
+function encodeWAV(samples: Float32Array[], sampleRate: number) {
+  const sampleCount = samples.reduce((total, sample) => total + sample.length, 0);
+  const buffer = new ArrayBuffer(44 + sampleCount * 2);
+  const view = new DataView(buffer);
+  const writeText = (offset: number, value: string) => { for (let index = 0; index < value.length; index += 1) view.setUint8(offset + index, value.charCodeAt(index)); };
+  writeText(0, "RIFF"); view.setUint32(4, 36 + sampleCount * 2, true); writeText(8, "WAVE"); writeText(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeText(36, "data"); view.setUint32(40, sampleCount * 2, true);
+  let offset = 44;
+  for (const sample of samples) for (const value of sample) { view.setInt16(offset, Math.max(-1, Math.min(1, value)) * 0x7fff, true); offset += 2; }
+  return new Blob([buffer], { type: "audio/wav" });
+}
 function formatBytes(bytes: number) { return `${(bytes / (1024 * 1024)).toFixed(bytes < 1024 * 1024 ? 2 : 1)} MB`; }
 function formatTime(milliseconds: number) { const seconds = Math.max(0, Math.round(milliseconds / 1000)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`; }
 function loginErrorMessage(error: Error) { if (error.message === "invalid_credentials") return "Invalid username or password."; if (error.message === "rate_limited") return "Too many sign-in attempts. Wait one minute, then try again."; return "Sign-in is temporarily unavailable. Confirm that the API has started and migrations completed."; }

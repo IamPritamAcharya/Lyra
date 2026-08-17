@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -31,6 +32,7 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 		}()
 		requestID := newRequestID()
 		w.Header().Set("X-Request-ID", requestID)
+		liveCaptureMilliseconds := liveCaptureDuration(r)
 		if identifier == nil {
 			log.Error("identification_rejected", "request_id", requestID, "reason", "service_not_ready")
 			writeError(w, http.StatusServiceUnavailable, "not_ready")
@@ -92,6 +94,9 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 			return
 		}
 		fields := []any{"request_id", requestID, "matched", result.Matched, "candidates", len(result.Candidates), "duration_ms", time.Since(started).Milliseconds()}
+		if liveCaptureMilliseconds > 0 {
+			fields = append(fields, "live_capture_ms", liveCaptureMilliseconds)
+		}
 		if result.Candidate != nil {
 			fields = append(fields,
 				"track_internal_id", result.Candidate.TrackID,
@@ -117,6 +122,15 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 		}
 	}
 }
+
+func liveCaptureDuration(r *http.Request) int64 {
+	milliseconds, err := strconv.ParseInt(r.Header.Get("X-Lyra-Live-Capture-Ms"), 10, 64)
+	if err != nil || milliseconds <= 0 || milliseconds > 15_000 {
+		return 0
+	}
+	return milliseconds
+}
+
 func newRequestID() string {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {

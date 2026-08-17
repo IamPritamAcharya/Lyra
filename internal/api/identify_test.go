@@ -55,3 +55,22 @@ func TestIdentifyReturnsPublicMetadataAndRemovesTemporaryInput(t *testing.T) {
 		t.Fatalf("body=%s", response.Body.String())
 	}
 }
+
+func TestLiveCaptureDuration(t *testing.T) {
+	for _, test := range []struct {
+		header string
+		want   int64
+	}{
+		{header: "5000", want: 5000},
+		{header: "15000", want: 15000},
+		{header: "0", want: 0},
+		{header: "15001", want: 0},
+		{header: "invalid", want: 0},
+	} {
+		request := httptest.NewRequest(http.MethodPost, "/v1/identify", nil)
+		request.Header.Set("X-Lyra-Live-Capture-Ms", test.header)
+		if got := liveCaptureDuration(request); got != test.want {
+			t.Fatalf("header=%q duration=%d want=%d", test.header, got, test.want)
+		}
+	}
+}

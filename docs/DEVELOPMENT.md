@@ -12,9 +12,11 @@ cd ..
 make dev
 ```
 
-`make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Open exactly that `localhost` URL: the API's development CORS policy intentionally permits it, not `127.0.0.1`. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and the Docker infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
+`make dev` starts local PostgreSQL, Valkey, MinIO, waits until they are ready, runs migrations, and starts the Go API, worker, and Vite at `http://localhost:5173`. Open exactly that `localhost` URL: the API's development CORS policy intentionally permits it, not `127.0.0.1`. `LYRA_ALLOWED_ORIGIN` may list multiple explicit comma-separated origins for temporary phone-tunnel testing. Press `Ctrl-C` to gracefully stop the API, worker, frontend, and the Docker infrastructure. The frontend’s `VITE_LYRA_API_BASE_URL` must point to the API (default `http://localhost:8080`).
 
 `Ctrl-C` is an intentional successful shutdown, so `make dev` exits with code 0 after cleanup. `make build`, `make db-migrate`, `make eval`, and `make benchmark` write/use the ignored `bin/lyra` binary; do not run bare `go build ./cmd/lyra`, which makes Go place a `lyra` executable at the repository root.
+
+The Identify view's **Listen live** control asks the browser for microphone permission only after it is pressed. It captures PCM in browser memory through the Web Audio API and encodes a complete WAV file at 5, 8, and 11 seconds for `/v1/identify`, stopping early if it finds a match. Otherwise it records for at most 15 seconds and makes one final check; the user may stop it earlier. The microphone tracks stop after capture and the browser does not retain the recording. A modern browser with `getUserMedia` and Web Audio API support is required; use HTTPS outside local `localhost` development.
 
 PostgreSQL and MinIO are backed by named Docker volumes. `make infra-down` stops containers without deleting indexed tracks or reference audio. Only remove those Docker volumes when you deliberately want an empty local Lyra installation.
 
