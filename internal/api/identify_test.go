@@ -49,7 +49,9 @@ func TestIdentifyReturnsPublicMetadataAndRemovesTemporaryInput(t *testing.T) {
 	if response.Header().Get("X-Request-ID") == "" {
 		t.Fatal("request id missing")
 	}
-	if !bytes.Contains(response.Body.Bytes(), []byte(track.PublicID)) || bytes.Contains(response.Body.Bytes(), []byte("track_internal_id")) {
+	if !bytes.Contains(response.Body.Bytes(), []byte(track.PublicID)) ||
+		!bytes.Contains(response.Body.Bytes(), []byte(`"match_strength":"timing_aligned"`)) ||
+		bytes.Contains(response.Body.Bytes(), []byte("track_internal_id")) {
 		t.Fatalf("body=%s", response.Body.String())
 	}
 }

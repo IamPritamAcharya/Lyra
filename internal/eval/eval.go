@@ -28,8 +28,13 @@ type Identifier interface {
 	Identify(context.Context, string) (Result, error)
 }
 type Report struct {
-	QueryCount, Correct, FalsePositives, ExpectedNoMatch, CorrectNoMatch int
-	P50MS, P95MS, P99MS                                                  int64
+	QueryCount, ExpectedMatches, Correct, WrongMatches, FalseNegatives, FalsePositives, ExpectedNoMatch, CorrectNoMatch int
+	P50MS, P95MS, P99MS                                                                                                 int64
+	Conditions                                                                                                          []ConditionReport
+}
+type ConditionReport struct {
+	Condition                                                                                                           string
+	QueryCount, ExpectedMatches, Correct, WrongMatches, FalseNegatives, FalsePositives, ExpectedNoMatch, CorrectNoMatch int
 }
 
 func Load(path string) (Manifest, error) {
@@ -49,6 +54,7 @@ func Load(path string) (Manifest, error) {
 func Run(ctx context.Context, m Manifest, id Identifier) (Report, error) {
 	r := Report{QueryCount: len(m.Queries)}
 	lat := make([]int64, 0, len(m.Queries))
+	conditions := map[string]*ConditionReport{}
 	for _, q := range m.Queries {
 		start := time.Now()
 		got, err := id.Identify(ctx, q.Path)
@@ -56,18 +62,17 @@ func Run(ctx context.Context, m Manifest, id Identifier) (Report, error) {
 		if err != nil {
 			return r, fmt.Errorf("identify %s: %w", q.Path, err)
 		}
-		if !q.ExpectedMatch {
-			r.ExpectedNoMatch++
-			if !got.Matched {
-				r.CorrectNoMatch++
-			} else {
-				r.FalsePositives++
-			}
-			continue
+		condition := q.Condition
+		if condition == "" {
+			condition = "unspecified"
 		}
-		if got.Matched && got.TrackID == q.ExpectedTrackID {
-			r.Correct++
+		byCondition := conditions[condition]
+		if byCondition == nil {
+			byCondition = &ConditionReport{Condition: condition}
+			conditions[condition] = byCondition
 		}
+		classify(&r, q, got)
+		classifyCondition(byCondition, q, got)
 	}
 	sort.Slice(lat, func(i, j int) bool { return lat[i] < lat[j] })
 	if len(lat) > 0 {
@@ -75,5 +80,55 @@ func Run(ctx context.Context, m Manifest, id Identifier) (Report, error) {
 		r.P95MS = lat[(len(lat)-1)*95/100]
 		r.P99MS = lat[(len(lat)-1)*99/100]
 	}
+	r.Conditions = make([]ConditionReport, 0, len(conditions))
+	for _, condition := range conditions {
+		r.Conditions = append(r.Conditions, *condition)
+	}
+	sort.Slice(r.Conditions, func(i, j int) bool { return r.Conditions[i].Condition < r.Conditions[j].Condition })
 	return r, nil
+}
+
+func classify(r *Report, q Query, got Result) {
+	if !q.ExpectedMatch {
+		r.ExpectedNoMatch++
+		if !got.Matched {
+			r.CorrectNoMatch++
+		} else {
+			r.FalsePositives++
+		}
+		return
+	}
+	r.ExpectedMatches++
+	if !got.Matched {
+		r.FalseNegatives++
+		return
+	}
+	if got.TrackID == q.ExpectedTrackID {
+		r.Correct++
+		return
+	}
+	r.WrongMatches++
+}
+
+func classifyCondition(r *ConditionReport, q Query, got Result) {
+	r.QueryCount++
+	if !q.ExpectedMatch {
+		r.ExpectedNoMatch++
+		if !got.Matched {
+			r.CorrectNoMatch++
+		} else {
+			r.FalsePositives++
+		}
+		return
+	}
+	r.ExpectedMatches++
+	if !got.Matched {
+		r.FalseNegatives++
+		return
+	}
+	if got.TrackID == q.ExpectedTrackID {
+		r.Correct++
+		return
+	}
+	r.WrongMatches++
 }

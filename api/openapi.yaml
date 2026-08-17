@@ -4,7 +4,7 @@ paths:
   /v1/identify:
     post:
       requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [audio], properties: {audio: {type: string, format: binary}}}}}}
-      responses: {'200': {description: Match, no-match, or insufficient signal; headers: {X-Request-ID: {schema: {type: string}}}}}
+      responses: {'200': {description: Match, no-match, or insufficient signal; headers: {X-Request-ID: {schema: {type: string}}}, content: {application/json: {schema: {$ref: '#/components/schemas/IdentifyResponse'}}}}}
   /health/live:
     get: {responses: {'200': {description: Process alive}}}
   /health/ready:
@@ -48,3 +48,23 @@ components:
       type: object
       required: [title, artist]
       properties: {title: {type: string}, artist: {type: string}, album: {type: string, nullable: true}}
+    IdentifyResponse:
+      type: object
+      required: [request_id, matched, match, processing_ms]
+      properties:
+        request_id: {type: string}
+        matched: {type: boolean}
+        reason: {type: string, enum: [insufficient_audio_signal]}
+        match: {$ref: '#/components/schemas/IdentifyMatch', nullable: true}
+        processing_ms: {type: integer, format: int64}
+    IdentifyMatch:
+      type: object
+      required: [track_id, title, artist, confidence, match_strength, reference_offset_ms]
+      properties:
+        track_id: {type: string}
+        title: {type: string}
+        artist: {type: string}
+        album: {type: string, nullable: true}
+        confidence: {type: number, format: double, description: Internal temporal-concentration diagnostic; it is not a probability of correctness.}
+        match_strength: {type: string, enum: [timing_aligned], description: The returned match passed Lyra's temporal-alignment evidence gates.}
+        reference_offset_ms: {type: integer, format: int64}

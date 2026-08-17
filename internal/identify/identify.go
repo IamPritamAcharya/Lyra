@@ -27,20 +27,34 @@ type HashFilter interface {
 	FilterHashes(context.Context, int16, []uint32, int64) ([]uint32, error)
 }
 type Config struct {
-	Version                                                                                                        int16
-	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors, MaxFingerprints, MaxPostings, MaxCandidates int
-	MaxPostingsPerHash                                                                                             int64
+	Version                                                                                                                               int16
+	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors, MinDistinctFrequencyBins, MinAlignmentSpanFrames, MinCandidateLead int
+	MaxFingerprints, MaxPostings, MaxCandidates                                                                                           int
+	MaxPostingsPerHash                                                                                                                    int64
 }
 
 func DefaultConfig() Config {
-	return Config{Version: fingerprint.AlgorithmLandmarkV1, AlignmentTolerance: 2, MinAlignedHits: 6, MinDistinctHashes: 3, MinAnchors: 3, MaxFingerprints: 5000, MaxPostings: 50000, MaxCandidates: 1000, MaxPostingsPerHash: 10000}
+	return Config{
+		Version:                  fingerprint.AlgorithmLandmarkV1,
+		AlignmentTolerance:       2,
+		MinAlignedHits:           6,
+		MinDistinctHashes:        3,
+		MinAnchors:               3,
+		MinDistinctFrequencyBins: 2,
+		MinAlignmentSpanFrames:   4,
+		MinCandidateLead:         1,
+		MaxFingerprints:          5000,
+		MaxPostings:              50000,
+		MaxCandidates:            1000,
+		MaxPostingsPerHash:       10000,
+	}
 }
 
 type Candidate struct {
-	TrackID                                                           int64
-	RawHashHits, AlignedHits, UniqueAlignedHashes, UniqueQueryAnchors int
-	AlignmentSpanFrames, BestAlignmentOffset                          int
-	AlignmentCoherence                                                float64
+	TrackID                                                                                  int64
+	RawHashHits, AlignedHits, UniqueAlignedHashes, UniqueQueryAnchors, DistinctFrequencyBins int
+	AlignmentSpanFrames, BestAlignmentOffset, RunnerUpAlignmentHits                          int
+	AlignmentCoherence, QueryAnchorCoverage                                                  float64
 }
 type Result struct {
 	Matched    bool
@@ -83,6 +97,10 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 			return Result{}, ErrNoMatch
 		}
 	}
+	usableQueryAnchors := 0
+	for _, hash := range hashes {
+		usableQueryAnchors += len(anchors[hash])
+	}
 	postings, err := s.index.Lookup(ctx, s.cfg.Version, hashes)
 	if err != nil {
 		return Result{}, err
@@ -100,40 +118,17 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 				if s.cfg.MaxCandidates > 0 && len(states) >= s.cfg.MaxCandidates {
 					continue
 				}
-				st = &state{offsets: map[int]int{}, hashes: map[uint32]struct{}{}, anchors: map[int]struct{}{}}
+				st = &state{offsets: map[int]int{}}
 				states[p.TrackID] = st
 			}
-			st.raw++
 			offset := p.AnchorFrame - frame
-			st.offsets[offset]++
-			st.hashes[p.Hash] = struct{}{}
-			st.anchors[frame] = struct{}{}
+			st.add(p.Hash, frame, offset)
 		}
 	}
 	out := make([]Candidate, 0, len(states))
 	for id, st := range states {
-		best, bestOffset := 0, 0
-		for offset := range st.offsets {
-			score := 0
-			for delta := -s.cfg.AlignmentTolerance; delta <= s.cfg.AlignmentTolerance; delta++ {
-				score += st.offsets[offset+delta]
-			}
-			if score > best || (score == best && offset < bestOffset) {
-				best, bestOffset = score, offset
-			}
-		}
-		spanMin, spanMax := 0, 0
-		first := true
-		for frame := range st.anchors {
-			if first || frame < spanMin {
-				spanMin = frame
-			}
-			if first || frame > spanMax {
-				spanMax = frame
-			}
-			first = false
-		}
-		c := Candidate{TrackID: id, RawHashHits: st.raw, AlignedHits: best, UniqueAlignedHashes: len(st.hashes), UniqueQueryAnchors: len(st.anchors), AlignmentSpanFrames: spanMax - spanMin, BestAlignmentOffset: bestOffset}
+		best, bestOffset, runnerUp := st.bestAlignment(s.cfg.AlignmentTolerance)
+		c := st.candidate(id, best, bestOffset, runnerUp, s.cfg.AlignmentTolerance, usableQueryAnchors)
 		if c.RawHashHits > 0 {
 			c.AlignmentCoherence = float64(c.AlignedHits) / float64(c.RawHashHits)
 		}
@@ -150,6 +145,9 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		if a.AlignmentSpanFrames != b.AlignmentSpanFrames {
 			return a.AlignmentSpanFrames > b.AlignmentSpanFrames
 		}
+		if a.DistinctFrequencyBins != b.DistinctFrequencyBins {
+			return a.DistinctFrequencyBins > b.DistinctFrequencyBins
+		}
 		if a.AlignmentCoherence != b.AlignmentCoherence {
 			return a.AlignmentCoherence > b.AlignmentCoherence
 		}
@@ -160,7 +158,14 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		return result, ErrNoMatch
 	}
 	best := out[0]
-	if best.AlignedHits < s.cfg.MinAlignedHits || best.UniqueAlignedHashes < s.cfg.MinDistinctHashes || best.UniqueQueryAnchors < s.cfg.MinAnchors {
+	if best.AlignedHits < s.cfg.MinAlignedHits ||
+		best.UniqueAlignedHashes < s.cfg.MinDistinctHashes ||
+		best.UniqueQueryAnchors < s.cfg.MinAnchors ||
+		best.DistinctFrequencyBins < s.cfg.MinDistinctFrequencyBins ||
+		best.AlignmentSpanFrames < s.cfg.MinAlignmentSpanFrames {
+		return result, ErrNoMatch
+	}
+	if len(out) > 1 && best.AlignedHits-out[1].AlignedHits < s.cfg.MinCandidateLead {
 		return result, ErrNoMatch
 	}
 	result.Matched = true
@@ -171,6 +176,87 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 type state struct {
 	raw     int
 	offsets map[int]int
-	hashes  map[uint32]struct{}
-	anchors map[int]struct{}
+	matches []match
+}
+
+type match struct {
+	hash, queryAnchor, offset int
+}
+
+func (s *state) add(hash uint32, queryAnchor, offset int) {
+	s.raw++
+	s.offsets[offset]++
+	s.matches = append(s.matches, match{hash: int(hash), queryAnchor: queryAnchor, offset: offset})
+}
+
+func (s state) bestAlignment(tolerance int) (best, bestOffset, runnerUp int) {
+	for offset := range s.offsets {
+		score := s.alignmentScore(offset, tolerance)
+		if score > best || (score == best && offset < bestOffset) {
+			best, bestOffset = score, offset
+		}
+	}
+	for offset := range s.offsets {
+		if abs(offset-bestOffset) <= 2*tolerance {
+			continue
+		}
+		if score := s.alignmentScore(offset, tolerance); score > runnerUp {
+			runnerUp = score
+		}
+	}
+	return best, bestOffset, runnerUp
+}
+
+func (s state) alignmentScore(offset, tolerance int) int {
+	score := 0
+	for delta := -tolerance; delta <= tolerance; delta++ {
+		score += s.offsets[offset+delta]
+	}
+	return score
+}
+
+func (s state) candidate(trackID int64, alignedHits, bestOffset, runnerUp, tolerance, usableQueryAnchors int) Candidate {
+	hashes := map[int]struct{}{}
+	anchors := map[int]struct{}{}
+	frequencies := map[int]struct{}{}
+	spanMin, spanMax := 0, 0
+	first := true
+	for _, evidence := range s.matches {
+		if abs(evidence.offset-bestOffset) > tolerance {
+			continue
+		}
+		hashes[evidence.hash] = struct{}{}
+		anchors[evidence.queryAnchor] = struct{}{}
+		frequency, _, _ := fingerprint.DecodeHash(uint32(evidence.hash))
+		frequencies[frequency] = struct{}{}
+		if first || evidence.queryAnchor < spanMin {
+			spanMin = evidence.queryAnchor
+		}
+		if first || evidence.queryAnchor > spanMax {
+			spanMax = evidence.queryAnchor
+		}
+		first = false
+	}
+	candidate := Candidate{
+		TrackID:               trackID,
+		RawHashHits:           s.raw,
+		AlignedHits:           alignedHits,
+		UniqueAlignedHashes:   len(hashes),
+		UniqueQueryAnchors:    len(anchors),
+		DistinctFrequencyBins: len(frequencies),
+		AlignmentSpanFrames:   spanMax - spanMin,
+		BestAlignmentOffset:   bestOffset,
+		RunnerUpAlignmentHits: runnerUp,
+	}
+	if usableQueryAnchors > 0 {
+		candidate.QueryAnchorCoverage = float64(candidate.UniqueQueryAnchors) / float64(usableQueryAnchors)
+	}
+	return candidate
+}
+
+func abs(value int) int {
+	if value < 0 {
+		return -value
+	}
+	return value
 }

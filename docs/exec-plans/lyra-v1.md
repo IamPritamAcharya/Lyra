@@ -56,6 +56,7 @@ Each phase meets its bootstrap acceptance checks. v1 only completes after all re
 ## Decision Log
 
 - landmark-v1 uses the frozen values in `docs/ALGORITHM.md`.
+- Match-strength percentages must not be presented as probabilities. `timing_aligned` indicates that an accepted candidate passed temporal-evidence gates; Phase 7 measured data is required before adding calibrated strength levels or changing thresholds.
 
 ## Outcomes & Retrospective
 
@@ -80,6 +81,8 @@ Phase 9 adds panic recovery, restrictive HTTP security headers, and `scripts/bac
 Phase 10 adds `render.yaml`, `docs/DEPLOYMENT.md`, and a real `make docker-build` target. Docker execution has not been verified in this session because the Docker socket is inaccessible to the execution sandbox.
 
 Release preflight ran on 2026-08-13: race tests, vet, and golangci-lint passed. `govulncheck` could not retrieve `vuln.go.dev` due session network restrictions; Docker checks remain blocked by Docker socket access.
+
+Matcher-scoring milestone on 2026-08-17: candidate evidence is now recomputed from the selected ±2-frame offset neighbourhood only. The matcher requires evidence across at least two anchor-frequency bins and rejects tied top-track aligned-hit scores. It records runner-up, query-coverage, span, and frequency-diversity diagnostics in safe identification logs. This is a scoring correction; `landmark-v1` extraction and hash compatibility are unchanged. The Identify UI now labels accepted evidence as `Timing aligned` instead of presenting temporal concentration as percentage confidence. Evaluation reports now include wrong-track matches, false negatives, false positives, and per-condition counts. `make verify`, `make test-race`, `web: npm run lint`, and `web: npm run build` passed. `make lint` could not run because `golangci-lint` is absent from the environment. `make benchmark` reported 1 ms for 1,000 synthetic tracks, 4,200 postings, and 200 query fingerprints; it is not a PostgreSQL or accuracy measurement. A legal corpus and `testdata/manifests/eval.json` are still absent, so `make eval` cannot run.
 
 The user authorized a new frontend phase after the backend work. `web/` is a static React/TypeScript/Vite identification UI. ADR-001 records that Go remains the only backend. The public UI build passed with Node 18/Vite 5.
 

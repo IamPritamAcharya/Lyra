@@ -40,12 +40,16 @@ func Run(ctx context.Context, tracks int) (Report, error) {
 	rng := rand.New(rand.NewSource(1))
 	query := make([]fingerprint.Fingerprint, 200)
 	for i := range query {
-		query[i] = fingerprint.Fingerprint{Hash: uint32(i + 1), AnchorFrame: i * 3}
+		hash, err := fingerprint.EncodeHash(i%200, i%63-31, fingerprint.MinDTFrames+i%62)
+		if err != nil {
+			return Report{}, fmt.Errorf("encode synthetic fingerprint: %w", err)
+		}
+		query[i] = fingerprint.Fingerprint{Hash: hash, AnchorFrame: i * 3}
 	}
 	postings := make([]identify.Posting, 0, tracks*4+len(query))
 	for track := 1; track <= tracks; track++ {
 		for n := 0; n < 4; n++ {
-			postings = append(postings, identify.Posting{Hash: uint32(rng.Intn(len(query)) + 1), TrackID: int64(track), AnchorFrame: rng.Intn(4000)})
+			postings = append(postings, identify.Posting{Hash: query[rng.Intn(len(query))].Hash, TrackID: int64(track), AnchorFrame: rng.Intn(4000)})
 		}
 	}
 	for _, q := range query {

@@ -72,7 +72,15 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 				writeError(w, http.StatusServiceUnavailable, "catalog_unavailable")
 				return
 			}
-			response["match"] = map[string]any{"track_id": track.PublicID, "title": track.Title, "artist": track.ArtistName, "album": track.AlbumName, "confidence": result.Candidate.AlignmentCoherence, "reference_offset_ms": result.Candidate.BestAlignmentOffset * fingerprint.HopSize * 1000 / fingerprint.SampleRate}
+			response["match"] = map[string]any{
+				"track_id":            track.PublicID,
+				"title":               track.Title,
+				"artist":              track.ArtistName,
+				"album":               track.AlbumName,
+				"confidence":          result.Candidate.AlignmentCoherence,
+				"match_strength":      "timing_aligned",
+				"reference_offset_ms": result.Candidate.BestAlignmentOffset * fingerprint.HopSize * 1000 / fingerprint.SampleRate,
+			}
 		}
 		matched = result.Matched
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
@@ -85,7 +93,17 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 		}
 		fields := []any{"request_id", requestID, "matched", result.Matched, "candidates", len(result.Candidates), "duration_ms", time.Since(started).Milliseconds()}
 		if result.Candidate != nil {
-			fields = append(fields, "track_internal_id", result.Candidate.TrackID, "aligned_hits", result.Candidate.AlignedHits, "distinct_hashes", result.Candidate.UniqueAlignedHashes, "query_anchors", result.Candidate.UniqueQueryAnchors, "coherence", result.Candidate.AlignmentCoherence)
+			fields = append(fields,
+				"track_internal_id", result.Candidate.TrackID,
+				"aligned_hits", result.Candidate.AlignedHits,
+				"distinct_hashes", result.Candidate.UniqueAlignedHashes,
+				"query_anchors", result.Candidate.UniqueQueryAnchors,
+				"frequency_bins", result.Candidate.DistinctFrequencyBins,
+				"alignment_span_frames", result.Candidate.AlignmentSpanFrames,
+				"query_anchor_coverage", result.Candidate.QueryAnchorCoverage,
+				"runner_up_alignment_hits", result.Candidate.RunnerUpAlignmentHits,
+				"coherence", result.Candidate.AlignmentCoherence,
+			)
 		}
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
 			fields = append(fields, "reason", "insufficient_audio_signal")

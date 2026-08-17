@@ -1,5 +1,7 @@
 {
   "queries": [
-    {"path": "testdata/queries/example.wav", "expected_track_id": "public-track-uuid", "expected_match": true, "duration_seconds": 5, "condition": "clean"}
+    {"path": "testdata/queries/example-clean.wav", "expected_track_id": "public-track-uuid", "expected_match": true, "duration_seconds": 5, "condition": "clean"},
+    {"path": "testdata/queries/example-noise-10db.wav", "expected_track_id": "public-track-uuid", "expected_match": true, "duration_seconds": 5, "condition": "noise_10db"},
+    {"path": "testdata/queries/unrelated.wav", "expected_match": false, "duration_seconds": 5, "condition": "no_match"}
   ]
 }

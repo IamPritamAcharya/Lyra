@@ -172,7 +172,7 @@ func formatAttr(groups []string, attr slog.Attr) string {
 	}
 	if key == "coherence" {
 		if coherence, ok := value.Any().(float64); ok {
-			return fmt.Sprintf("confidence=%.1f%%", coherence*100)
+			return fmt.Sprintf("temporal_concentration=%.1f%%", coherence*100)
 		}
 	}
 	if key == "matched" {

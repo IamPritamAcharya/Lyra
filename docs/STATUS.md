@@ -32,6 +32,9 @@ Completed:
 - Local Compose includes Adminer at `http://localhost:8081` for PostgreSQL inspection; it is development-only and excluded from deployment.
 - `make db-reset CONFIRM=RESET_LYRA_DB` safely gates a destructive local PostgreSQL schema reset and reapplies migrations; it intentionally does not delete MinIO objects.
 - Race tests, `go vet`, and golangci-lint have passed in the current environment after unchecked-error fixes.
+- Matcher evidence accounting now derives distinct hashes, query anchors, frequency diversity, and alignment span only from the selected temporal-offset neighbourhood. It rejects tied top-track evidence and single-frequency chains instead of selecting an arbitrary candidate. `landmark-v1` hash generation is unchanged.
+- The Identify UI now shows the non-probabilistic status `Timing aligned` rather than treating temporal concentration as a percentage confidence. The API retains `confidence` as a documented internal diagnostic and adds `match_strength=timing_aligned` for accepted matches.
+- Evaluation reports now separate wrong-track matches from false negatives and false positives, and include sorted per-condition counts. The checked-in manifest is an example only; a legal corpus and active manifest remain required.
 
 Latest evaluation: not yet available; no recognition claims have been measured.
 
@@ -40,10 +43,11 @@ Latest brand verification:
 - Brand refinement removes external fonts, repeated backdrop blurs, and glow-heavy effects after local UI responsiveness feedback; the SVG mark was simplified to a minimal lyre/spectral form.
 
 Known issues:
-- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
+- Docker socket access is unavailable to this coding session, so the Docker image and local full-workflow smoke test cannot be rerun here. `golangci-lint` is not installed in this coding environment, so `make lint` cannot run. `govulncheck`/npm audit are blocked here because they cannot fetch remote vulnerability databases. A legal evaluation corpus remains unimplemented.
 
 Next:
-- Complete the branded UI/browser smoke test and validate the refreshed README rendering on GitHub.
+- Build and index a legal reproducible evaluation corpus, run `make eval`, and calibrate matcher evidence gates using its development/holdout results.
+- Complete the branded UI/browser smoke test with indexed local references, including the revised `Timing aligned` match presentation, and validate the refreshed README rendering on GitHub.
 
 Manual local test data:
 - `testdata/audio/side-to-side.mp3` (237.9 seconds) and `testdata/audio/kalyani.mp3` (287.3 seconds) are full local references.
@@ -62,3 +66,4 @@ Last verification:
 - `make dev` startup readiness wait was added after Docker returned before PostgreSQL accepted its first migration connection.
 - `make dev` launches Vite using `localhost` to match the deliberately restricted local CORS origin.
 - `go test ./...`, `go vet ./...`, and `golangci-lint run` passed after logging and development shutdown changes on 2026-08-13.
+- On 2026-08-17, `make verify`, `make test-race`, `web: npm run lint`, and `web: npm run build` passed after matcher-evidence, evaluation-reporting, and Identify UI changes. `make lint` could not run because `golangci-lint` is absent from the environment. `make benchmark` returned `1 ms`, `200` query fingerprints, `4,200` synthetic postings, and `matched=true`; it is still an in-memory synthetic result only. Go emitted a non-fatal module-stat-cache warning for the read-only global cache during that benchmark build.

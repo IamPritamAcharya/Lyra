@@ -10,6 +10,7 @@ export type IdentifyResponse = {
     artist: string;
     album: string | null;
     confidence: number;
+    match_strength: "timing_aligned";
     reference_offset_ms: number;
   };
   processing_ms: number;
