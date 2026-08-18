@@ -183,18 +183,21 @@ function Identify() {
     stopMicrophone();
   }, []);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (file) mutation.mutate(file); };
-  const result = liveResult ?? mutation.data ?? null;
   const isProcessing = isCheckingLive || mutation.isPending;
+  // A completed result belongs to one recording only. Never leave its title in
+  // the orb while the next microphone run is collecting or checking audio.
+  const result = isListening || isCheckingLive ? null : liveResult ?? mutation.data ?? null;
   return <>
     <section className="listening-hero" aria-labelledby="identify-title">
       <p className="kicker"><i /> LIVE MUSIC FINDER</p>
       <h1 id="identify-title">What’s playing?</h1>
       <p className="listening-subtitle">Bring the music close. Lyra compares what it hears against your private catalog—without keeping the recording.</p>
+      <p className="hero-meta"><span>Private catalog</span><i aria-hidden="true" /><span>Up to 15 seconds</span></p>
       <div className="orb-stage">
         <ListeningOrb active={isListening} checking={isProcessing} level={audioLevel} seconds={listenSeconds} maximum={maximumListenSeconds} response={result} onClick={isListening ? stopListening : () => { void startListening(); }} disabled={mutation.isPending || (!isListening && isCheckingLive)} />
         {result?.matched && result.match && <MatchNode response={result} />}
       </div>
-      <p className="orb-status" role="status">{isListening ? <>Listening · {listenSeconds}s of {maximumListenSeconds}s <button onClick={stopListening} type="button">Stop</button></> : isProcessing ? "Finding a match…" : result && !result.matched ? "No match in your catalog" : "Tap the orb to start listening"}</p>
+      <p className="orb-status" role="status">{isListening ? <><span>Listening</span><strong>{listenSeconds}<i>/</i>{maximumListenSeconds}s</strong><button onClick={stopListening} type="button">Stop</button></> : isProcessing ? "Finding a match…" : result && !result.matched ? "No match in your catalog" : "Tap the orb to start listening"}</p>
     </section>
     <form className="identify-card upload-card" onSubmit={submit}>
       <label className={file ? "drop-zone has-file" : "drop-zone"}>
@@ -276,14 +279,14 @@ function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: 
       if (element.width !== width || element.height !== height) { element.width = width; element.height = height; }
       const size = Math.min(width, height); const center = size / 2; const time = now / 1000;
       smoothLevel += (levelRef.current - smoothLevel) * .075;
-      const energy = active ? smoothLevel : checking ? .16 : matched ? .09 : noMatch ? .03 : .025;
+      const energy = active ? smoothLevel : checking ? .14 : matched ? .08 : noMatch ? .03 : .018;
       const hue = matched ? 155 : noMatch ? 225 : checking ? 42 : 258;
       context.clearRect(0, 0, width, height); context.save(); context.translate((width - size) / 2, (height - size) / 2);
-      const glow = context.createRadialGradient(center, center, size * .1, center, center, size * .62);
-      glow.addColorStop(0, `hsla(${hue + 35}, 100%, 82%, .9)`); glow.addColorStop(.33, `hsla(${hue}, 84%, 65%, .78)`); glow.addColorStop(1, `hsla(${hue - 24}, 75%, 22%, .1)`);
+      const glow = context.createRadialGradient(center - size * .13, center - size * .17, size * .025, center, center, size * .56);
+      glow.addColorStop(0, `hsla(${hue + 42}, 100%, 94%, .96)`); glow.addColorStop(.16, `hsla(${hue + 22}, 96%, 78%, .92)`); glow.addColorStop(.52, `hsla(${hue}, 82%, 54%, .82)`); glow.addColorStop(1, `hsla(${hue - 30}, 78%, 18%, .14)`);
       context.fillStyle = glow; context.beginPath();
-      for (let index = 0; index <= 72; index += 1) { const angle = index / 72 * Math.PI * 2; const wave = Math.sin(angle * 3 + time * 1.2) * .032 + Math.cos(angle * 5 - time * .7) * .018; const radius = size * (.365 + wave + energy * .07 * Math.sin(angle * 4 + time * 2)); const x = center + Math.cos(angle) * radius; const y = center + Math.sin(angle) * radius; index === 0 ? context.moveTo(x, y) : context.lineTo(x, y); }
-      context.closePath(); context.shadowBlur = size * (.16 + energy * .17); context.shadowColor = `hsla(${hue}, 90%, 66%, .68)`; context.fill(); context.restore();
+      for (let index = 0; index <= 96; index += 1) { const angle = index / 96 * Math.PI * 2; const wave = Math.sin(angle * 3 + time * .72) * .008 + Math.cos(angle * 5 - time * .42) * .006; const radius = size * (.425 + wave + energy * .035 * Math.sin(angle * 4 + time * 1.3)); const x = center + Math.cos(angle) * radius; const y = center + Math.sin(angle) * radius; index === 0 ? context.moveTo(x, y) : context.lineTo(x, y); }
+      context.closePath(); context.shadowBlur = size * (.13 + energy * .14); context.shadowColor = `hsla(${hue}, 90%, 66%, .58)`; context.fill(); context.restore();
       frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);

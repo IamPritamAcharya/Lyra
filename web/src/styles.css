@@ -27,3 +27,35 @@ body::before { background-image: linear-gradient(rgba(255,255,255,.025) 1px, tra
 
 /* Canvas owns the liquid motion; CSS no longer competes for the same transform. */
 .orb-core { animation: none !important; background: transparent !important; border-radius: 50%; box-shadow: none; transform: none !important; }.orb-core::after { display: none; }.fluid-orb-canvas { height: 100%; inset: 0; position: absolute; width: 100%; }.orb-glyph, .orb-core > small, .orb-result { position: relative; z-index: 1; }.is-listening .orb-ripple { animation: orb-breathe 2.4s ease-in-out infinite; }.is-checking .orb-ripple { animation: idle-ring 1.4s ease-in-out infinite; }.has-match .orb-ripple { animation: idle-ring 1.7s ease-out 2; border-color: rgba(156,240,212,.5); }
+
+/* Full-circle listening surface: the canvas supplies the motion; this layer gives it room to breathe. */
+.listening-hero { min-height: 665px; padding-top: 5rem; }
+.listening-hero::before { background: radial-gradient(circle, rgba(145, 123, 255, .14), transparent 64%); content: ""; height: 470px; left: 50%; pointer-events: none; position: absolute; top: 148px; transform: translateX(-50%); width: 470px; z-index: -1; }
+.listening-subtitle { margin-top: 2rem; }
+.listening-orb { height: 360px; margin: 2rem 0 .8rem; overflow: visible; width: 360px; }
+.orb-core { height: 236px; overflow: visible; width: 236px; }
+.fluid-orb-canvas { filter: saturate(1.08) contrast(1.04); }
+.orb-glyph { font-size: 2.45rem; text-shadow: 0 3px 18px rgba(11, 5, 34, .38); }
+.orb-status { align-items: center; display: flex; gap: .5rem; justify-content: center; margin-top: .65rem; min-height: 1.35rem; }
+.orb-status strong { color: #e7e8ff; font-size: .78rem; font-weight: 600; letter-spacing: .02em; }
+.orb-status strong i { color: #7e8295; font-style: normal; margin: 0 .12rem; }
+.orb-status button { margin-left: .25rem; }
+.trust-row { margin-top: 4.3rem; }
+@media (max-width: 720px) { .listening-hero { min-height: 570px; padding-top: 3.5rem; }.listening-hero::before { height: 350px; top: 140px; width: 350px; }.listening-orb { height: 292px; width: 292px; }.orb-core { height: 202px; width: 202px; }.trust-row { margin-top: 3.3rem; } }
+
+/* Deliberate negative space lets the outer field frame, rather than overlap, the core. */
+.hero-meta { align-items: center; color: #85899e; display: flex; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .63rem; gap: .6rem; letter-spacing: .075em; margin: 1.05rem 0 0; text-transform: uppercase; }
+.hero-meta i { background: linear-gradient(135deg, var(--aqua), var(--violet)); border-radius: 50%; box-shadow: 0 0 10px rgba(156, 236, 240, .48); height: 4px; width: 4px; }
+.listening-hero::before { animation: hero-aura 12s ease-in-out infinite; background: radial-gradient(circle, rgba(137, 111, 246, .17), rgba(92, 216, 230, .045) 42%, transparent 68%); }
+.listening-orb { height: 390px; width: 390px; }
+.orb-core { height: 232px; width: 232px; }
+.orb-ripple { border: 1px solid rgba(156, 236, 240, .25); box-shadow: 0 0 20px rgba(104, 92, 236, .08); height: 272px; width: 272px; }
+.orb-ripple-two { border-color: rgba(189, 156, 255, .17); height: 330px; width: 330px; }
+.is-listening .orb-ripple { border-color: rgba(156, 236, 240, .52); box-shadow: 0 0 30px rgba(86, 207, 220, .12); }
+.is-listening .orb-ripple-two { border-color: rgba(189, 156, 255, .34); }
+.orb-core::before { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .14), transparent 36%); border: 1px solid rgba(214, 205, 255, .18); border-radius: 50%; content: ""; inset: -1px; pointer-events: none; position: absolute; z-index: 1; }
+.orb-glyph, .orb-core > small, .orb-result { z-index: 2; }
+.orb-stage::before { background: radial-gradient(ellipse, rgba(10, 8, 27, .62), transparent 68%); content: ""; height: 108px; left: 50%; position: absolute; top: calc(50% + 100px); transform: translateX(-50%); width: 286px; z-index: -1; }
+@keyframes hero-aura { 0%, 100% { opacity: .72; transform: translateX(-50%) scale(.96); } 50% { opacity: 1; transform: translateX(-50%) scale(1.04); } }
+@media (max-width: 720px) { .listening-hero { min-height: 600px; }.listening-orb { height: 314px; width: 314px; }.orb-core { height: 190px; width: 190px; }.orb-ripple { height: 226px; width: 226px; }.orb-ripple-two { height: 278px; width: 278px; }.hero-meta { font-size: .57rem; }.orb-stage::before { top: calc(50% + 75px); width: 220px; } }
+@media (prefers-reduced-motion: reduce) { .listening-hero::before { animation: none; } }
