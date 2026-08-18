@@ -29,6 +29,7 @@ type HashFilter interface {
 type Config struct {
 	Version                                                                                                                               int16
 	AlignmentTolerance, MinAlignedHits, MinDistinctHashes, MinAnchors, MinDistinctFrequencyBins, MinAlignmentSpanFrames, MinCandidateLead int
+	MinQueryAnchorCoverage                                                                                                                float64
 	MaxFingerprints, MaxPostings, MaxCandidates                                                                                           int
 	MaxPostingsPerHash                                                                                                                    int64
 }
@@ -42,7 +43,8 @@ func DefaultConfig() Config {
 		MinAnchors:               3,
 		MinDistinctFrequencyBins: 2,
 		MinAlignmentSpanFrames:   4,
-		MinCandidateLead:         1,
+		MinQueryAnchorCoverage:   0.02,
+		MinCandidateLead:         3,
 		MaxFingerprints:          5000,
 		MaxPostings:              50000,
 		MaxCandidates:            1000,
@@ -162,7 +164,8 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		best.UniqueAlignedHashes < s.cfg.MinDistinctHashes ||
 		best.UniqueQueryAnchors < s.cfg.MinAnchors ||
 		best.DistinctFrequencyBins < s.cfg.MinDistinctFrequencyBins ||
-		best.AlignmentSpanFrames < s.cfg.MinAlignmentSpanFrames {
+		best.AlignmentSpanFrames < s.cfg.MinAlignmentSpanFrames ||
+		best.QueryAnchorCoverage < s.cfg.MinQueryAnchorCoverage {
 		return result, ErrNoMatch
 	}
 	if len(out) > 1 && best.AlignedHits-out[1].AlignedHits < s.cfg.MinCandidateLead {

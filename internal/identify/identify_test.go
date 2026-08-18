@@ -113,6 +113,40 @@ func TestSingleFrequencyEvidenceIsRejected(t *testing.T) {
 		t.Fatalf("result=%+v err=%v", r, err)
 	}
 }
+
+func TestWeakCoverageAndAmbiguousLeadAreRejected(t *testing.T) {
+	query := make([]fingerprint.Fingerprint, 100)
+	posts := make([]Posting, 0, 24)
+	for i := range query {
+		hash, err := fingerprint.EncodeHash(i+1, 0, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query[i] = fingerprint.Fingerprint{Hash: hash, AnchorFrame: i * 3}
+		if i < 6 {
+			posts = append(posts, Posting{Hash: hash, TrackID: 1, AnchorFrame: 100 + i*3})
+		}
+	}
+	cfg := DefaultConfig()
+	cfg.MinQueryAnchorCoverage = 0.1
+	r, err := New(&fakeIndex{postings: posts}, cfg).Match(context.Background(), query)
+	if err != ErrNoMatch || r.Matched || len(r.Candidates) != 1 {
+		t.Fatalf("weak coverage result=%+v err=%v", r, err)
+	}
+
+	posts = posts[:0]
+	for i := 0; i < 12; i++ {
+		for _, trackID := range []int64{1, 2} {
+			posts = append(posts, Posting{Hash: query[i].Hash, TrackID: trackID, AnchorFrame: int(trackID)*100 + i*3})
+		}
+	}
+	cfg = DefaultConfig()
+	cfg.MinQueryAnchorCoverage = 0
+	r, err = New(&fakeIndex{postings: posts}, cfg).Match(context.Background(), query)
+	if err != ErrNoMatch || r.Matched || len(r.Candidates) != 2 {
+		t.Fatalf("ambiguous lead result=%+v err=%v", r, err)
+	}
+}
 func TestNoMatchAndInsufficient(t *testing.T) {
 	_, err := New(&fakeIndex{}, DefaultConfig()).Match(context.Background(), nil)
 	if err != fingerprint.ErrInsufficientSignal {

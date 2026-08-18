@@ -97,17 +97,23 @@ func identifyHandler(maxBytes int64, identifier FileIdentifier, tracks catalog.R
 		if liveCaptureMilliseconds > 0 {
 			fields = append(fields, "live_capture_ms", liveCaptureMilliseconds)
 		}
-		if result.Candidate != nil {
+		evidence := result.Candidate
+		if evidence == nil && len(result.Candidates) > 0 {
+			// A rejected candidate's aggregate evidence is safe to log and makes
+			// weak or ambiguous no-match decisions diagnosable without retaining audio.
+			evidence = &result.Candidates[0]
+		}
+		if evidence != nil {
 			fields = append(fields,
-				"track_internal_id", result.Candidate.TrackID,
-				"aligned_hits", result.Candidate.AlignedHits,
-				"distinct_hashes", result.Candidate.UniqueAlignedHashes,
-				"query_anchors", result.Candidate.UniqueQueryAnchors,
-				"frequency_bins", result.Candidate.DistinctFrequencyBins,
-				"alignment_span_frames", result.Candidate.AlignmentSpanFrames,
-				"query_anchor_coverage", result.Candidate.QueryAnchorCoverage,
-				"runner_up_alignment_hits", result.Candidate.RunnerUpAlignmentHits,
-				"coherence", result.Candidate.AlignmentCoherence,
+				"track_internal_id", evidence.TrackID,
+				"aligned_hits", evidence.AlignedHits,
+				"distinct_hashes", evidence.UniqueAlignedHashes,
+				"query_anchors", evidence.UniqueQueryAnchors,
+				"frequency_bins", evidence.DistinctFrequencyBins,
+				"alignment_span_frames", evidence.AlignmentSpanFrames,
+				"query_anchor_coverage", evidence.QueryAnchorCoverage,
+				"runner_up_alignment_hits", evidence.RunnerUpAlignmentHits,
+				"coherence", evidence.AlignmentCoherence,
 			)
 		}
 		if errors.Is(err, fingerprint.ErrInsufficientSignal) {
