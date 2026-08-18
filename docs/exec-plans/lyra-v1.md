@@ -122,6 +122,14 @@ Checking-state palette refinement on 2026-08-18: replaced the yellow canvas proc
 
 No-match result presentation update on 2026-08-18: final no-match responses now create the existing outward result node with a rose error treatment instead of putting no-match text in the sphere. Narrow screens place that card directly below the orb, preserving the result rather than hiding the node. `web: npm run lint && npm run build` passed.
 
+Catalog navigation correction on 2026-08-18: the header switches from `Private catalog` to a visible `Find music` return action while the catalog is open, restoring a direct route to the public listening page. `web: npm run lint && npm run build` passed.
+
+Landing-grid contrast refinement on 2026-08-18: increased the blue-violet grid opacity behind the public landing composition, retaining its background mask and non-interactive behavior. `web: npm run lint && npm run build` passed.
+
+Landing-grid angle refinement on 2026-08-18: rotated and oversized the masked fixed grid by 11 degrees, preserving full viewport coverage while giving the background texture a diagonal direction. `web: npm run lint && npm run build` passed.
+
+Top-navigation lighting refinement on 2026-08-18: redistributed purple shadow pools toward the top of the landing page and added a dedicated navigation halo/shadow, leaving the lower-page background comparatively quiet. `web: npm run lint && npm run build` passed.
+
 The user authorized a new frontend phase after the backend work. `web/` is a static React/TypeScript/Vite identification UI. ADR-001 records that Go remains the only backend. The public UI build passed with Node 18/Vite 5.
 
 The frontend now includes the one permitted administrator workflow. `LYRA_ADMIN_USERNAME` and a bcrypt `LYRA_ADMIN_PASSWORD_HASH` configure the account. Successful login generates random opaque session and CSRF tokens; only SHA-256 token hashes are stored in PostgreSQL. The cookie is HttpOnly/SameSite=Lax (and configurable Secure), catalog writes require the CSRF header, sessions expire after 12 hours, and login has a per-IP limit. The static client receives no admin secret and keeps its CSRF token only in memory. `make dev` now starts local infrastructure, applies migrations, and runs API, worker, and Vite together. Go unit/vet and TypeScript lint/production-build checks passed; a real browser login smoke test remains pending.

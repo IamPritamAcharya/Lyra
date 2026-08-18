@@ -89,3 +89,7 @@ Last verification:
 - Live identification results are now tagged with their microphone-run ID and rendered only for that run, preventing a late response from an earlier matched recording from resurfacing after another attempt starts. `web: npm run lint && npm run build` passed on 2026-08-18.
 - The live-checking orb state now remains violet/aqua rather than switching to yellow, keeping all listening states within the product palette. `web: npm run lint && npm run build` passed on 2026-08-18.
 - No-match outcomes now use the same outward result-card pattern as matches, styled with the existing rose error color and placed beneath the orb on narrow screens. The no-match copy no longer occupies the orb center. `web: npm run lint && npm run build` passed on 2026-08-18.
+- The private-catalog header now provides a visible `Find music` return action back to the public listening page. `web: npm run lint && npm run build` passed on 2026-08-18.
+- Increased the violet-tinted landing background-grid contrast so the texture remains visible beneath the hero. `web: npm run lint && npm run build` passed on 2026-08-18.
+- Rotated and oversized the background grid to create a diagonal field with continuous viewport coverage. `web: npm run lint && npm run build` passed on 2026-08-18.
+- Concentrated the brand-color shadow pools at the page top and added a purple halo around the navigation, while reducing lower-page background glow. `web: npm run lint && npm run build` passed on 2026-08-18.

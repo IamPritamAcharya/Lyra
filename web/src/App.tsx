@@ -15,7 +15,7 @@ export function App() {
       <a className="brand" href="#top" aria-label="Lyra home" onClick={() => setView("identify")}>
         <img src="/brand/lyra-mark.svg" alt="" /><span>LYRA</span>
       </a>
-      <nav className="site-nav" aria-label="Primary navigation"><button className="nav-link" onClick={() => setView("admin")}>Private catalog <span>↗</span></button></nav>
+      <nav className="site-nav" aria-label="Primary navigation">{view === "admin" ? <button className="nav-link" onClick={() => setView("identify")}>← Find music</button> : <button className="nav-link" onClick={() => setView("admin")}>Private catalog <span>↗</span></button>}</nav>
     </header>
     <main id="top" className="page">{view === "identify" ? <Identify /> : <Admin csrf={csrf} setCSRF={setCSRF} />}</main>
     <footer className="site-footer"><span>Lyra · acoustic landmark identification</span><span>Developed by Pritam · Query recordings are never retained.</span></footer>
