@@ -114,6 +114,12 @@ Landing-orb spacing refinement on 2026-08-18: introduced intentional negative sp
 
 Live-result reset correction on 2026-08-18: a previous completed live match is now hidden while another microphone run is capturing or awaiting a checkpoint. This prevents a former track from visually leaking into a new silent or unrelated recording; the new final response remains the only result shown. `web: npm run lint && npm run build` passed.
 
+Orb-decoration cleanup on 2026-08-18: removed the two decorative dashed `orb-orbit` layers and their four rotating dots. The core sphere, separate circular field rings, and real post-match connector/card were intentionally retained. `web: npm run lint && npm run build` passed.
+
+Live-result isolation correction on 2026-08-18: every stored live-identification response now carries the corresponding microphone-run ID. The display accepts it only when that ID is the current run, eliminating stale matches that could otherwise reappear after a subsequent recording begins. `web: npm run lint && npm run build` passed.
+
+Checking-state palette refinement on 2026-08-18: replaced the yellow canvas processing hue with Lyra violet so idle, listening, and checking states remain within the intended violet/aqua system. `web: npm run lint && npm run build` passed.
+
 The user authorized a new frontend phase after the backend work. `web/` is a static React/TypeScript/Vite identification UI. ADR-001 records that Go remains the only backend. The public UI build passed with Node 18/Vite 5.
 
 The frontend now includes the one permitted administrator workflow. `LYRA_ADMIN_USERNAME` and a bcrypt `LYRA_ADMIN_PASSWORD_HASH` configure the account. Successful login generates random opaque session and CSRF tokens; only SHA-256 token hashes are stored in PostgreSQL. The cookie is HttpOnly/SameSite=Lax (and configurable Secure), catalog writes require the CSRF header, sessions expire after 12 hours, and login has a per-IP limit. The static client receives no admin secret and keeps its CSRF token only in memory. `make dev` now starts local infrastructure, applies migrations, and runs API, worker, and Vite together. Go unit/vet and TypeScript lint/production-build checks passed; a real browser login smoke test remains pending.

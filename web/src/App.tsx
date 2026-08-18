@@ -5,6 +5,7 @@ import { createTrack, deleteTrack, identify, listTracks, login, logout, uploadTr
 type View = "identify" | "admin";
 
 type LiveCapture = { context: AudioContext; source: MediaStreamAudioSourceNode; processor: ScriptProcessorNode };
+type LiveResult = { run: number; response: IdentifyResponse };
 
 export function App() {
   const [view, setView] = useState<View>("identify");
@@ -27,7 +28,8 @@ function Identify() {
   const [listenSeconds, setListenSeconds] = useState(0);
   const [isCheckingLive, setIsCheckingLive] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
-  const [liveResult, setLiveResult] = useState<IdentifyResponse | null>(null);
+  const [liveResult, setLiveResult] = useState<LiveResult | null>(null);
+  const [visibleLiveRun, setVisibleLiveRun] = useState(0);
   const [liveSearchExhausted, setLiveSearchExhausted] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const mutation = useMutation({ mutationFn: (queryFile: File) => identify(queryFile) });
@@ -78,11 +80,11 @@ function Identify() {
         if (run !== listeningRun.current) return;
         if (response.matched) {
           matchFound.current = true;
-          setLiveResult(response);
+          setLiveResult({ run, response });
           clearListeningTimers();
           stopListening();
         } else if (finalCheck) {
-          setLiveResult(response);
+          setLiveResult({ run, response });
           setLiveSearchExhausted(reachedListenLimit.current);
         }
       } catch {
@@ -106,6 +108,7 @@ function Identify() {
     setLiveSearchExhausted(false);
     listeningRun.current += 1;
     const run = listeningRun.current;
+    setVisibleLiveRun(run);
     matchFound.current = false;
     reachedListenLimit.current = false;
     try {
@@ -182,11 +185,26 @@ function Identify() {
     liveCapture.current = null;
     stopMicrophone();
   }, []);
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (file) mutation.mutate(file); };
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!file) return;
+    // A file-based identify is a new run too — clear any stale live state so
+    // it can't be shown, or preferred over this run's own result, once this
+    // finishes. See the `result` derivation below for the other half of this.
+    setLiveError(null);
+    setLiveResult(null);
+    setLiveSearchExhausted(false);
+    mutation.mutate(file);
+  };
   const isProcessing = isCheckingLive || mutation.isPending;
-  // A completed result belongs to one recording only. Never leave its title in
-  // the orb while the next microphone run is collecting or checking audio.
-  const result = isListening || isCheckingLive ? null : liveResult ?? mutation.data ?? null;
+  // A completed result belongs to one run only. `mutation.isPending` has to
+  // be in this guard, not just `isListening`/`isCheckingLive`: without it, a
+  // truthy `liveResult` from a prior live run wins the `??` below unconditionally
+  // while a fresh file upload is still in flight, so the old result stays on
+  // screen straight through the "processing" state and never gets replaced.
+  const isBusy = isListening || isCheckingLive || mutation.isPending;
+  const currentLiveResult = liveResult?.run === visibleLiveRun ? liveResult.response : null;
+  const result = isBusy ? null : currentLiveResult ?? mutation.data ?? null;
   return <>
     <section className="listening-hero" aria-labelledby="identify-title">
       <p className="kicker"><i /> LIVE MUSIC FINDER</p>
@@ -258,7 +276,8 @@ function ListeningOrb({ active, checking, level, seconds, maximum, response, onC
   const match = response?.matched ? response.match : null;
   const noMatch = response && !response.matched;
   return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""} ${match ? "has-match" : ""} ${noMatch ? "has-no-match" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
-    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><FluidOrbCanvas level={level} active={active} checking={checking} matched={Boolean(match)} noMatch={Boolean(noMatch)} /><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
+    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" />
+    <span className="orb-core"><FluidOrbCanvas level={level} active={active} checking={checking} matched={Boolean(match)} noMatch={Boolean(noMatch)} /><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
   </button>;
 }
 function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: number; active: boolean; checking: boolean; matched: boolean; noMatch: boolean }) {
@@ -280,7 +299,7 @@ function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: 
       const size = Math.min(width, height); const center = size / 2; const time = now / 1000;
       smoothLevel += (levelRef.current - smoothLevel) * .075;
       const energy = active ? smoothLevel : checking ? .14 : matched ? .08 : noMatch ? .03 : .018;
-      const hue = matched ? 155 : noMatch ? 225 : checking ? 42 : 258;
+      const hue = matched ? 155 : noMatch ? 225 : checking ? 278 : 258;
       context.clearRect(0, 0, width, height); context.save(); context.translate((width - size) / 2, (height - size) / 2);
       const glow = context.createRadialGradient(center - size * .13, center - size * .17, size * .025, center, center, size * .56);
       glow.addColorStop(0, `hsla(${hue + 42}, 100%, 94%, .96)`); glow.addColorStop(.16, `hsla(${hue + 22}, 96%, 78%, .92)`); glow.addColorStop(.52, `hsla(${hue}, 82%, 54%, .82)`); glow.addColorStop(1, `hsla(${hue - 30}, 78%, 18%, .14)`);
@@ -315,4 +334,3 @@ function encodeWAV(samples: Float32Array[], sampleRate: number) {
 function formatBytes(bytes: number) { return `${(bytes / (1024 * 1024)).toFixed(bytes < 1024 * 1024 ? 2 : 1)} MB`; }
 function formatTime(milliseconds: number) { const seconds = Math.max(0, Math.round(milliseconds / 1000)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`; }
 function loginErrorMessage(error: Error) { if (error.message === "invalid_credentials") return "Invalid username or password."; if (error.message === "rate_limited") return "Too many sign-in attempts. Wait one minute, then try again."; return "Sign-in is temporarily unavailable. Confirm that the API has started and migrations completed."; }
-function SignalGraphic() { return <svg viewBox="0 0 360 250" fill="none"><defs><linearGradient id="signal" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#A5B4FC"/><stop offset=".55" stopColor="#C084FC"/><stop offset="1" stopColor="#67E8F9"/></linearGradient></defs>{[38, 73, 108, 143, 178, 213].map((y, index) => <path key={y} d={`M0 ${y} C 55 ${y - 25 + index * 3}, 85 ${y + 30 - index * 4}, 130 ${y} S 215 ${y - 28 + index * 3}, 280 ${y} S 328 ${y + 15}, 360 ${y - 2}`} stroke="url(#signal)" strokeOpacity={0.22 + index * 0.09} strokeWidth="1.5" />)}<circle cx="106" cy="108" r="5" fill="#67E8F9"/><circle cx="211" cy="72" r="5" fill="#C084FC"/><circle cx="278" cy="178" r="5" fill="#A5B4FC"/></svg>; }
