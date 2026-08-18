@@ -12,6 +12,8 @@ The current deterministic matcher queries the index once per deduplicated hash s
 
 For scalability, indexing refreshes `fingerprint_hash_stats` transactionally. The PostgreSQL index filters query hashes whose posting counts exceed the matcher’s default threshold of 10,000 before looking up postings. This is stop-word suppression: it preserves discriminative hashes while bounding work from common patterns.
 
+Queries are bounded to 5,000 fingerprints. If extraction yields more, the matcher deterministically samples landmarks across the full query rather than rejecting the recording solely because it is longer; sampled anchors retain their original frame positions for temporal alignment.
+
 ## Evaluation requirements
 
 Before changing landmark extraction, target-zone values, hash packing, or the seed acceptance floors, evaluate against a legal reproducible corpus with separate development and holdout partitions. The manifest must label query condition and expected outcome. At minimum, report clean excerpts; codec/resampling/EQ/noise variants; real microphone captures; and unrelated music, speech, silence, and noise. `lyra eval` reports correct matches, wrong-track matches, false negatives, false positives, latency percentiles, and per-condition counts. Use these measured distributions to calibrate evidence gates; do not tune them from an individual clip.

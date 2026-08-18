@@ -180,6 +180,25 @@ func TestSafeguardsBoundWork(t *testing.T) {
 	}
 }
 
+func TestFingerprintLimitSamplesAcrossTheQuery(t *testing.T) {
+	query := make([]fingerprint.Fingerprint, 20)
+	posts := make([]Posting, 0, len(query))
+	for i := range query {
+		hash, err := fingerprint.EncodeHash(i+1, 0, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query[i] = fingerprint.Fingerprint{Hash: hash, AnchorFrame: i * 3}
+		posts = append(posts, Posting{Hash: hash, TrackID: 1, AnchorFrame: 100 + i*3})
+	}
+	cfg := DefaultConfig()
+	cfg.MaxFingerprints = 10
+	r, err := New(&fakeIndex{postings: posts}, cfg).Match(context.Background(), query)
+	if err != nil || !r.Matched || r.Candidate.TrackID != 1 || r.Candidate.UniqueQueryAnchors != 10 {
+		t.Fatalf("result=%+v err=%v", r, err)
+	}
+}
+
 func TestCommonHashFilterSuppressesWeakHashes(t *testing.T) {
 	query := []fingerprint.Fingerprint{{Hash: 1, AnchorFrame: 1}}
 	cfg := DefaultConfig()

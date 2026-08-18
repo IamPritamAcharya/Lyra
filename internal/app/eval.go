@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lyra/lyra/internal/audio"
 	"github.com/lyra/lyra/internal/config"
 	lyraeval "github.com/lyra/lyra/internal/eval"
+	"github.com/lyra/lyra/internal/fingerprint"
 	"github.com/lyra/lyra/internal/identify"
 	lyrapostgres "github.com/lyra/lyra/internal/persistence/postgres"
 )
@@ -36,7 +38,10 @@ type evalAdapter struct {
 
 func (a evalAdapter) Identify(ctx context.Context, path string) (lyraeval.Result, error) {
 	got, err := a.id.IdentifyFile(ctx, path)
-	if err != nil && err != identify.ErrNoMatch {
+	if errors.Is(err, identify.ErrNoMatch) || errors.Is(err, fingerprint.ErrInsufficientSignal) {
+		return lyraeval.Result{}, nil
+	}
+	if err != nil {
 		return lyraeval.Result{}, err
 	}
 	if !got.Matched {

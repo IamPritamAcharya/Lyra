@@ -75,7 +75,7 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 		return Result{}, fingerprint.ErrInsufficientSignal
 	}
 	if s.cfg.MaxFingerprints > 0 && len(query) > s.cfg.MaxFingerprints {
-		return Result{}, ErrNoMatch
+		query = evenlySample(query, s.cfg.MaxFingerprints)
 	}
 	anchors := map[uint32]map[int]struct{}{}
 	for _, fp := range query {
@@ -174,6 +174,17 @@ func (s *Service) Match(ctx context.Context, query []fingerprint.Fingerprint) (R
 	result.Matched = true
 	result.Candidate = &best
 	return result, nil
+}
+
+func evenlySample(in []fingerprint.Fingerprint, maximum int) []fingerprint.Fingerprint {
+	if maximum <= 0 || len(in) <= maximum {
+		return in
+	}
+	out := make([]fingerprint.Fingerprint, maximum)
+	for i := range out {
+		out[i] = in[i*len(in)/maximum]
+	}
+	return out
 }
 
 type state struct {
