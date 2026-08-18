@@ -255,8 +255,41 @@ function ListeningOrb({ active, checking, level, seconds, maximum, response, onC
   const match = response?.matched ? response.match : null;
   const noMatch = response && !response.matched;
   return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""} ${match ? "has-match" : ""} ${noMatch ? "has-no-match" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
-    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
+    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><FluidOrbCanvas level={level} active={active} checking={checking} matched={Boolean(match)} noMatch={Boolean(noMatch)} /><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
   </button>;
+}
+function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: number; active: boolean; checking: boolean; matched: boolean; noMatch: boolean }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const levelRef = useRef(level);
+  levelRef.current = level;
+  useEffect(() => {
+    const element = canvas.current;
+    if (!element) return;
+    const context = element.getContext("2d");
+    if (!context) return;
+    let frame = 0;
+    let smoothLevel = 0;
+    const draw = (now: number) => {
+      const bounds = element.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.round(bounds.width * ratio)); const height = Math.max(1, Math.round(bounds.height * ratio));
+      if (element.width !== width || element.height !== height) { element.width = width; element.height = height; }
+      const size = Math.min(width, height); const center = size / 2; const time = now / 1000;
+      smoothLevel += (levelRef.current - smoothLevel) * .075;
+      const energy = active ? smoothLevel : checking ? .16 : matched ? .09 : noMatch ? .03 : .025;
+      const hue = matched ? 155 : noMatch ? 225 : checking ? 42 : 258;
+      context.clearRect(0, 0, width, height); context.save(); context.translate((width - size) / 2, (height - size) / 2);
+      const glow = context.createRadialGradient(center, center, size * .1, center, center, size * .62);
+      glow.addColorStop(0, `hsla(${hue + 35}, 100%, 82%, .9)`); glow.addColorStop(.33, `hsla(${hue}, 84%, 65%, .78)`); glow.addColorStop(1, `hsla(${hue - 24}, 75%, 22%, .1)`);
+      context.fillStyle = glow; context.beginPath();
+      for (let index = 0; index <= 72; index += 1) { const angle = index / 72 * Math.PI * 2; const wave = Math.sin(angle * 3 + time * 1.2) * .032 + Math.cos(angle * 5 - time * .7) * .018; const radius = size * (.365 + wave + energy * .07 * Math.sin(angle * 4 + time * 2)); const x = center + Math.cos(angle) * radius; const y = center + Math.sin(angle) * radius; index === 0 ? context.moveTo(x, y) : context.lineTo(x, y); }
+      context.closePath(); context.shadowBlur = size * (.16 + energy * .17); context.shadowColor = `hsla(${hue}, 90%, 66%, .68)`; context.fill(); context.restore();
+      frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame);
+  }, [active, checking, matched, noMatch]);
+  return <canvas className="fluid-orb-canvas" ref={canvas} aria-hidden="true" />;
 }
 function MatchNode({ response }: { response: IdentifyResponse }) {
   const match = response.match!;
