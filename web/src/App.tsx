@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTrack, deleteTrack, identify, listTracks, login, logout, uploadTrackAudio, type IdentifyResponse, type Track } from "./api";
 
@@ -32,6 +32,7 @@ function Identify() {
   const [liveError, setLiveError] = useState<string | null>(null);
   const [liveResult, setLiveResult] = useState<IdentifyResponse | null>(null);
   const [liveSearchExhausted, setLiveSearchExhausted] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const mutation = useMutation({ mutationFn: (queryFile: File) => identify(queryFile) });
   const liveCapture = useRef<LiveCapture | null>(null);
   const finishListening = useRef<(() => void) | null>(null);
@@ -117,7 +118,13 @@ function Identify() {
       const source = context.createMediaStreamSource(microphone);
       const processor = context.createScriptProcessor(4096, 1, 1);
       const samples: Float32Array[] = [];
-      processor.onaudioprocess = (event) => samples.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      processor.onaudioprocess = (event) => {
+        const chunk = new Float32Array(event.inputBuffer.getChannelData(0));
+        samples.push(chunk);
+        let power = 0;
+        for (const sample of chunk) power += sample * sample;
+        setAudioLevel(Math.min(1, Math.sqrt(power / chunk.length) * 8));
+      };
       source.connect(processor);
       processor.connect(context.destination);
       liveCapture.current = { context, source, processor };
@@ -133,6 +140,7 @@ function Identify() {
         liveCapture.current = null;
         stopMicrophone();
         setIsListening(false);
+        setAudioLevel(0);
         if (samples.length === 0) {
           setLiveError("No usable audio was captured. Try again with music playing nearby.");
           return;
@@ -163,6 +171,7 @@ function Identify() {
       void liveCapture.current?.context.close();
       liveCapture.current = null;
       stopMicrophone();
+      setAudioLevel(0);
       setLiveError("Could not access the microphone. Allow microphone access, then try again.");
     }
   };
@@ -178,16 +187,19 @@ function Identify() {
   }, []);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (file) mutation.mutate(file); };
   return <>
-    <section className="hero" aria-labelledby="identify-title">
-      <div className="hero-copy"><p className="kicker"><i /> LANDMARK RECOGNITION</p><h1 id="identify-title">Find the music<br /><em>in the noise.</em></h1><p>Upload a short recording. Lyra compares its acoustic landmarks against your private reference catalog—fast, deterministic, and without retaining query audio.</p></div>
-      <div className="hero-signal" aria-hidden="true"><SignalGraphic /></div>
+    <section className="listening-hero" aria-labelledby="identify-title">
+      <p className="kicker"><i /> LIVE MUSIC FINDER</p>
+      <h1 id="identify-title">What’s playing?</h1>
+      <p className="listening-subtitle">Hold the music near your microphone. Lyra listens privately and searches your catalog as it hears more.</p>
+      <ListeningOrb active={isListening} checking={isCheckingLive} level={audioLevel} seconds={listenSeconds} maximum={maximumListenSeconds} onClick={isListening ? stopListening : () => { void startListening(); }} disabled={mutation.isPending || (!isListening && isCheckingLive)} />
+      <p className="orb-status" role="status">{isListening ? <>Listening · {listenSeconds}s of {maximumListenSeconds}s <button onClick={stopListening} type="button">Stop</button></> : isCheckingLive ? "Checking your recording…" : "Tap the orb to start listening"}</p>
     </section>
-    <form className="identify-card" onSubmit={submit}>
+    <form className="identify-card upload-card" onSubmit={submit}>
       <label className={file ? "drop-zone has-file" : "drop-zone"}>
         <input accept="audio/*" type="file" disabled={isListening || mutation.isPending} onChange={(event) => { setFile(event.target.files?.[0] ?? null); setLiveError(null); mutation.reset(); }} />
         <span className="drop-icon">⌁</span><span className="drop-title">{file ? file.name : "Choose an audio recording"}</span><span className="drop-copy">{file ? `${formatBytes(file.size)} · ready to identify` : "MP3, WAV, AAC and other FFmpeg-supported audio"}</span>
       </label>
-      <div className="identify-actions"><p><strong>Best results:</strong> a clear 5–10 second excerpt from an indexed reference.</p><div className="identify-buttons" style={{ display: "grid", gap: ".65rem" }}><button className="button button-primary" disabled={!file || mutation.isPending || isListening || isCheckingLive} type="submit">{mutation.isPending ? <><Spinner /> Reading landmarks…</> : <>Identify recording <Arrow /></>}</button><button className={isListening ? "button button-quiet" : "button button-aqua"} disabled={mutation.isPending || (!isListening && isCheckingLive)} onClick={isListening ? stopListening : () => { void startListening(); }} type="button">{isListening ? <><Spinner /> Listening {listenSeconds}s / {maximumListenSeconds}s · Stop</> : <>Listen live <span aria-hidden="true">◉</span></>}</button></div></div>
+      <div className="identify-actions"><p><strong>Prefer a file?</strong> Upload a clear excerpt from an indexed reference.</p><button className="button button-primary" disabled={!file || mutation.isPending || isListening || isCheckingLive} type="submit">{mutation.isPending ? <><Spinner /> Reading landmarks…</> : <>Identify recording <Arrow /></>}</button></div>
     </form>
     {isListening && <p className="live-note" role="status">Listening from your microphone. Lyra checks the growing capture and stops as soon as it finds a match; otherwise it keeps listening for up to 15 seconds.</p>}
     {!isListening && isCheckingLive && <p className="live-note" role="status">Checking the final live capture…</p>}
@@ -238,6 +250,12 @@ function Notice({ kind, title, children }: { kind: "error" | "warning" | "succes
 function TrustItem({ icon, title, text }: { icon: string; title: string; text: string }) { return <article><span>{icon}</span><div><strong>{title}</strong><p>{text}</p></div></article>; }
 function Stat({ value, label }: { value: string | number; label: string }) { return <div><strong>{value}</strong><span>{label}</span></div>; }
 function Spinner() { return <i className="spinner" aria-hidden="true" />; }
+function ListeningOrb({ active, checking, level, seconds, maximum, onClick, disabled }: { active: boolean; checking: boolean; level: number; seconds: number; maximum: number; onClick: () => void; disabled: boolean }) {
+  const scale = 1 + level * .16;
+  return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
+    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><span className="orb-glyph">{active ? "∿" : "◉"}</span>{active && <small>{seconds}/{maximum}</small>}</span>
+  </button>;
+}
 function Arrow() { return <span aria-hidden="true">→</span>; }
 function encodeWAV(samples: Float32Array[], sampleRate: number) {
   const sampleCount = samples.reduce((total, sample) => total + sample.length, 0);
