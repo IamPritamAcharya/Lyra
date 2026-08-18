@@ -54,6 +54,11 @@ button, input { font: inherit; } button { border: 0; } button:focus-visible, inp
 .node-dot { align-items: center; background: rgba(98,232,183,.15); border: 1px solid rgba(98,232,183,.36); border-radius: 50%; color: #91f4c5; display: inline-flex; flex: 0 0 auto; font-size: .8rem; height: 25px; justify-content: center; width: 25px; }
 .node-card small { color: #85899a; display: block; font-family: ui-monospace, monospace; font-size: .55rem; letter-spacing: .1em; margin-bottom: .18rem; }
 .node-card strong { display: block; font-size: .72rem; font-weight: 700; white-space: nowrap; } .node-card p { color: #888b9d; font-size: .62rem; margin: .12rem 0 0; white-space: nowrap; }
+.match-node.has-no-match .node-line { background: linear-gradient(90deg, rgba(251,113,133,.8), rgba(251,113,133,.16)); }
+.match-node.has-no-match .node-line::after { background: var(--rose); box-shadow: 0 0 14px var(--rose); }
+.match-node.has-no-match .node-card { border-color: rgba(251,113,133,.48); box-shadow: 0 10px 35px rgba(251,113,133,.12); }
+.match-node.has-no-match .node-dot { background: rgba(251,113,133,.14); border-color: rgba(251,113,133,.4); color: #fda4af; }
+.match-node.has-no-match .node-card small { color: #fda4af; }
 
 .upload-card { background: linear-gradient(120deg, rgba(18,24,42,.88), rgba(12,15,27,.9)); border: 1px solid rgba(192,200,255,.18); border-radius: 20px; box-shadow: 0 20px 55px rgba(0,0,0,.18); margin: .5rem auto 0; max-width: 780px; padding: .8rem; }
 .identify-card { display: grid; gap: 1.25rem; grid-template-columns: 1.25fr .75fr; padding: 1rem; }
@@ -108,7 +113,9 @@ button, input { font: inherit; } button { border: 0; } button:focus-visible, inp
   .listening-orb { height: 288px; width: 288px; }
   .orb-ripple { height: 204px; width: 204px; } .orb-ripple-two { height: 248px; width: 248px; }
   .orb-core { height: 168px; width: 168px; }
-  .match-node { display: none; }
+  .match-node { display: flex; left: 50%; top: calc(50% + 166px); transform: translateX(-50%); }
+  .match-node .node-line { display: none; }
+  .match-node .node-card { margin-left: 0; }
   .identify-card, .catalog-grid { grid-template-columns: 1fr; }
   .upload-card { max-width: none; }
   .identify-actions { gap: 1rem; padding: .3rem; }

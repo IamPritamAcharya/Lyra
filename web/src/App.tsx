@@ -213,7 +213,7 @@ function Identify() {
       <p className="hero-meta"><span>Private catalog</span><i aria-hidden="true" /><span>Up to 15 seconds</span></p>
       <div className="orb-stage">
         <ListeningOrb active={isListening} checking={isProcessing} level={audioLevel} seconds={listenSeconds} maximum={maximumListenSeconds} response={result} onClick={isListening ? stopListening : () => { void startListening(); }} disabled={mutation.isPending || (!isListening && isCheckingLive)} />
-        {result?.matched && result.match && <MatchNode response={result} />}
+        {result && <MatchNode response={result} />}
       </div>
       <p className="orb-status" role="status">{isListening ? <><span>Listening</span><strong>{listenSeconds}<i>/</i>{maximumListenSeconds}s</strong><button onClick={stopListening} type="button">Stop</button></> : isProcessing ? "Finding a match…" : result && !result.matched ? "No match in your catalog" : "Tap the orb to start listening"}</p>
     </section>
@@ -277,7 +277,7 @@ function ListeningOrb({ active, checking, level, seconds, maximum, response, onC
   const noMatch = response && !response.matched;
   return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""} ${match ? "has-match" : ""} ${noMatch ? "has-no-match" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
     <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" />
-    <span className="orb-core"><FluidOrbCanvas level={level} active={active} checking={checking} matched={Boolean(match)} noMatch={Boolean(noMatch)} /><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
+    <span className="orb-core"><FluidOrbCanvas level={level} active={active} checking={checking} matched={Boolean(match)} noMatch={Boolean(noMatch)} /><span className="orb-glyph">{match ? "✓" : noMatch ? "" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
   </button>;
 }
 function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: number; active: boolean; checking: boolean; matched: boolean; noMatch: boolean }) {
@@ -314,8 +314,8 @@ function FluidOrbCanvas({ level, active, checking, matched, noMatch }: { level: 
   return <canvas className="fluid-orb-canvas" ref={canvas} aria-hidden="true" />;
 }
 function MatchNode({ response }: { response: IdentifyResponse }) {
-  const match = response.match!;
-  return <article className="match-node has-match"><span className="node-line" aria-hidden="true" /><div className="node-card"><span className="node-dot">✓</span><div><small>CATALOG MATCH</small><strong>{match.title}</strong><p>{match.artist}</p></div></div>
+  const match = response.matched ? response.match : null;
+  return <article className={`match-node ${match ? "has-match" : "has-no-match"}`}><span className="node-line" aria-hidden="true" /><div className="node-card"><span className="node-dot">{match ? "✓" : "×"}</span><div><small>{match ? "CATALOG MATCH" : "NO CONFIDENT MATCH"}</small><strong>{match ? match.title : "Nothing matched"}</strong><p>{match ? match.artist : "Try another excerpt"}</p></div></div>
   </article>;
 }
 function Arrow() { return <span aria-hidden="true">→</span>; }
