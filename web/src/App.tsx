@@ -14,10 +14,7 @@ export function App() {
       <a className="brand" href="#top" aria-label="Lyra home" onClick={() => setView("identify")}>
         <img src="/brand/lyra-mark.svg" alt="" /><span>LYRA</span>
       </a>
-      <nav className="site-nav" aria-label="Primary navigation">
-        <button className={view === "identify" ? "nav-link is-active" : "nav-link"} onClick={() => setView("identify")}>Identify</button>
-        <button className={view === "admin" ? "nav-link is-active" : "nav-link"} onClick={() => setView("admin")}>Catalog</button>
-      </nav>
+      <nav className="site-nav" aria-label="Primary navigation"><button className="nav-link" onClick={() => setView("admin")}>Private catalog <span>↗</span></button></nav>
     </header>
     <main id="top" className="page">{view === "identify" ? <Identify /> : <Admin csrf={csrf} setCSRF={setCSRF} />}</main>
     <footer className="site-footer"><span>Lyra · acoustic landmark identification</span><span>Developed by Pritam · Query recordings are never retained.</span></footer>
@@ -186,13 +183,18 @@ function Identify() {
     stopMicrophone();
   }, []);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (file) mutation.mutate(file); };
+  const result = liveResult ?? mutation.data ?? null;
+  const isProcessing = isCheckingLive || mutation.isPending;
   return <>
     <section className="listening-hero" aria-labelledby="identify-title">
       <p className="kicker"><i /> LIVE MUSIC FINDER</p>
       <h1 id="identify-title">What’s playing?</h1>
-      <p className="listening-subtitle">Hold the music near your microphone. Lyra listens privately and searches your catalog as it hears more.</p>
-      <ListeningOrb active={isListening} checking={isCheckingLive} level={audioLevel} seconds={listenSeconds} maximum={maximumListenSeconds} onClick={isListening ? stopListening : () => { void startListening(); }} disabled={mutation.isPending || (!isListening && isCheckingLive)} />
-      <p className="orb-status" role="status">{isListening ? <>Listening · {listenSeconds}s of {maximumListenSeconds}s <button onClick={stopListening} type="button">Stop</button></> : isCheckingLive ? "Checking your recording…" : "Tap the orb to start listening"}</p>
+      <p className="listening-subtitle">Bring the music close. Lyra compares what it hears against your private catalog—without keeping the recording.</p>
+      <div className="orb-stage">
+        <ListeningOrb active={isListening} checking={isProcessing} level={audioLevel} seconds={listenSeconds} maximum={maximumListenSeconds} response={result} onClick={isListening ? stopListening : () => { void startListening(); }} disabled={mutation.isPending || (!isListening && isCheckingLive)} />
+        {result?.matched && result.match && <MatchNode response={result} />}
+      </div>
+      <p className="orb-status" role="status">{isListening ? <>Listening · {listenSeconds}s of {maximumListenSeconds}s <button onClick={stopListening} type="button">Stop</button></> : isProcessing ? "Finding a match…" : result && !result.matched ? "No match in your catalog" : "Tap the orb to start listening"}</p>
     </section>
     <form className="identify-card upload-card" onSubmit={submit}>
       <label className={file ? "drop-zone has-file" : "drop-zone"}>
@@ -205,9 +207,7 @@ function Identify() {
     {!isListening && isCheckingLive && <p className="live-note" role="status">Checking the final live capture…</p>}
     {liveError && <Notice kind="error" title="Live listening unavailable">{liveError}</Notice>}
     {mutation.isError && <Notice kind="error" title="Could not process that recording">Try another supported audio file under 10 MB.</Notice>}
-    {mutation.data && <Result response={mutation.data} />}
-    {liveResult && <Result response={liveResult} searchExhausted={liveSearchExhausted} />}
-    <section className="trust-row" aria-label="Lyra principles"><TrustItem icon="◈" title="Private by default" text="Query audio is processed temporarily, then removed." /><TrustItem icon="⌁" title="Deterministic" text="Acoustic landmarks, not opaque model guesses." /><TrustItem icon="↗" title="Built for excerpts" text="Designed for short recordings of indexed audio." /></section>
+    <section className="trust-row" aria-label="How Lyra works"><TrustItem icon="01" title="Listen" text="Play a clear excerpt near your microphone." /><TrustItem icon="02" title="Align" text="Landmarks are aligned against your private catalog." /><TrustItem icon="03" title="Find" text="A match ends listening early; otherwise it stops at 15 seconds." /></section>
   </>;
 }
 
@@ -250,11 +250,18 @@ function Notice({ kind, title, children }: { kind: "error" | "warning" | "succes
 function TrustItem({ icon, title, text }: { icon: string; title: string; text: string }) { return <article><span>{icon}</span><div><strong>{title}</strong><p>{text}</p></div></article>; }
 function Stat({ value, label }: { value: string | number; label: string }) { return <div><strong>{value}</strong><span>{label}</span></div>; }
 function Spinner() { return <i className="spinner" aria-hidden="true" />; }
-function ListeningOrb({ active, checking, level, seconds, maximum, onClick, disabled }: { active: boolean; checking: boolean; level: number; seconds: number; maximum: number; onClick: () => void; disabled: boolean }) {
+function ListeningOrb({ active, checking, level, seconds, maximum, response, onClick, disabled }: { active: boolean; checking: boolean; level: number; seconds: number; maximum: number; response: IdentifyResponse | null; onClick: () => void; disabled: boolean }) {
   const scale = 1 + level * .16;
-  return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
-    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><span className="orb-glyph">{active ? "∿" : "◉"}</span>{active && <small>{seconds}/{maximum}</small>}</span>
+  const match = response?.matched ? response.match : null;
+  const noMatch = response && !response.matched;
+  return <button className={`listening-orb ${active ? "is-listening" : ""} ${checking ? "is-checking" : ""} ${match ? "has-match" : ""} ${noMatch ? "has-no-match" : ""}`} disabled={disabled} onClick={onClick} type="button" aria-label={active ? "Stop listening" : "Start live listening"} style={{ "--level": level, "--orb-scale": scale } as CSSProperties}>
+    <span className="orb-ripple orb-ripple-one" /><span className="orb-ripple orb-ripple-two" /><span className="orb-core"><span className="orb-glyph">{match ? "✓" : noMatch ? "–" : active ? "∿" : "◉"}</span>{match ? <span className="orb-result"><strong>{match.title}</strong><small>{match.artist}</small></span> : noMatch ? <span className="orb-result"><strong>No match</strong><small>Try another excerpt</small></span> : active && <small>{seconds}/{maximum}</small>}</span>
   </button>;
+}
+function MatchNode({ response }: { response: IdentifyResponse }) {
+  const match = response.match!;
+  return <article className="match-node has-match"><span className="node-line" aria-hidden="true" /><div className="node-card"><span className="node-dot">✓</span><div><small>CATALOG MATCH</small><strong>{match.title}</strong><p>{match.artist}</p></div></div>
+  </article>;
 }
 function Arrow() { return <span aria-hidden="true">→</span>; }
 function encodeWAV(samples: Float32Array[], sampleRate: number) {
